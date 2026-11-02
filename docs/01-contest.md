@@ -34,7 +34,7 @@
 
 ## 원본과 출처
 
-1. 사용자 제공 설명회 원본 ZIP · PNG 15장 (로컬 자료명 `현대차앱공모전사진.zip`). Review Criteria, Submission Guide, Development Milestones, FAQ 화면.
+1. 사용자 제공 [설명회 스크린샷 원본 ZIP · PNG 15장](../sources/현대차앱공모전사진.zip). Review Criteria, Submission Guide, Development Milestones, FAQ 화면.
 2. 주최 측 [심사·시상](https://appdevchallenge.auto-hmg.io/guide/judging-awards)
 3. 주최 측 [지원·제출 방법 및 접수양식 다운로드](https://appdevchallenge.auto-hmg.io/guide/submission) · [모집 공고와 일정](https://appdevchallenge.auto-hmg.io/notice/c0a1a000-2026-4923-8000-000000000001)
 4. 주최 측 [개발 환경 및 SDK 문서](https://appdevchallenge.auto-hmg.io/guide/development)

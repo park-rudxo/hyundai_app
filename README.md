@@ -24,6 +24,6 @@
 
 ## 원본과 출처
 
-- 설명회 원본 ZIP은 로컬 작업 사본의 `sources/현대차앱공모전사진.zip`에 보관했다. 공개 안내는 [공식 참가 가이드](https://appdevchallenge.auto-hmg.io/guide)에서 확인할 수 있다.
+- [설명회 스크린샷 원본 ZIP · PNG 15장](sources/현대차앱공모전사진.zip)
 - [공식 참가 가이드](https://appdevchallenge.auto-hmg.io/guide) · [한경 컨센서스](https://markets.hankyung.com/consensus) · [금융감독원 DART](https://dart.fss.or.kr/)
 - 개별 공시 접수번호, 보고서 제목, 인용한 절과 제품 발표 링크는 각 조사 문서 마지막에 모았다.
