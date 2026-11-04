@@ -1,5 +1,11 @@
 # 출품 주제 탐색
 
+## 현재 조사 주제 · 동승자의 차멀미
+
+11월 4일, 동승자의 차멀미를 우선 조사하기로 했다. CDC는 멀미 민감도가 보통 7~12세에 가장 높고 성인이 되면서 낮아진다고 설명한다. GV80 부분변경 모델에는 전방 노면에 맞춰 서스펜션을 제어하는 승차감 기술이 있다. 두 차종에서 같은 사람의 멀미 발생을 비교한 근거는 확보하지 못했다.
+
+현대차·기아 임직원 아이디어 페스티벌에서 2026년 10월 ‘멀미 제로’가 최우수상을 받았다. 실내 조명·후석 화면을 이용한 시제품이다. Apple도 동승자의 휴대폰 화면 가장자리에 차량 움직임을 표시한다. 차별화 가설은 **멀미가 잦은 동승자가 출발 전 어느 구간에서 폰을 내려놓거나 쉴지 미리 정하는 경험**이다. 기존 내비가 주는 안내로 충분한지, Pleos에서 경로상의 연속 굽이 구간을 출발 전에 식별할 수 있는지는 미확인이다. 먼저 최근 실제 이동에서 처음 불편해진 시점과 당시 원했던 도움을 듣는다. 시연으로 측정할 것은 계획을 세우는 데 도움이 되는지이며, 증상을 유발하는 시험은 필요하지 않다.
+
 ## 11월 4일 다시 좁힌 후보
 
 육성형 게임은 참가자 본인이 비슷한 앱을 꾸준히 쓰지 않았다는 경험을 반영해 제외했다. 아래 두 가지는 선택 전 가설이다.
@@ -30,6 +36,9 @@
 최종 주제와 우선순위는 미정이다. 차량에서 읽을 수 있는 신호, 같은 문제를 해결하는 기존 제품, 당사자를 만날 수 있는지를 후보별로 확인한 뒤 결정한다.
 
 ## 원본과 출처
+
+- [CDC Yellow Book · 멀미의 감각 충돌과 연령별 민감도](https://www.cdc.gov/yellow-book/hcp/travel-air-sea/motion-sickness.html) · [제네시스 GV80 부분변경 모델의 승차감 기술](https://www.hyundaimotorgroup.com/ko/news/CONT0000000000115083)
+- [현대차그룹 · 2026 아이디어 페스티벌 최우수상 ‘멀미 제로’](https://www.hyundaimotorgroup.com/ko/story/2026-idea-festival) · [Apple · 차량 모션큐](https://support.apple.com/ko-kr/guide/iphone/iph55564cb22/27/ios/27)
 
 - [현대차그룹 · Pleos 기본 내비와 AI 길 안내](https://www.hyundaimotorgroup.com/ko/news/hyundai-motor-group-redefines-in-vehicle-experience-with-pleos-connect-next-generation-infotainment-system) · [현대차그룹 · 기존 맛집 로드의 추천 범위](https://www.hyundaimotorgroup.com/ko/story/CONT0000000000140719)
 
