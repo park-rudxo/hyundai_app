@@ -2,6 +2,12 @@
 
 ## 11월 4일 우선 검토 · 한 번에 적는 방문지별 짐
 
+**사진으로 준비하는 외가·친가 방문** · 출발 예정 시각과 몇 분 전에 알릴지를 사람이 정한다. 예컨대 10시 출발, 10분 전 알림이면 9시 50분에 휴대폰으로 준비 목록을 연다. 외가와 친가를 각각 한 번 선택해 해당 선물을 묶음 촬영한다. 각 사진이 목록의 항목이므로 이름 입력과 물체 인식 없이 쓸 수 있다. 사진 촬영과 실제 적재 확인은 별도다. 집에서 마지막으로 가스레인지나 조명을 확인한 뒤 찍는 사진은 ‘집 확인’에 넣고 촬영 시각을 함께 보관한다.
+
+차에서는 외가에 도착해 주차하면 외가 선물 사진만 보여 주고 사용자가 전달 완료를 누른다. 운전자가 집 상태를 확인하고 싶을 때는 주차 후 이번 외출의 사진과 촬영 시각을 열어본다. 앱은 사진으로 현재 가스 상태나 안전 여부를 판정하지 않는다. 첫 시연에서는 명시한 출발 시각으로 알림을 예약하고, 휴대폰 사진을 해당 차량 앱으로 전달하는 과정과 실제 경유지 도착 이벤트 수신을 각각 시험해야 한다.
+
+**중복 판정.** SnapPack은 실물 사진으로 짐 목록을 만들며, Before You Go는 외출 전 가스·잠금 등을 사진과 시간으로 기록하고 CarPlay 연결을 점검 시작 조건으로 쓸 수 있다. 독창성과 사용 가치를 검증할 단위는 사진 촬영 자체보다 ‘출발 전에 찍은 목적지별 짐 묶음이 도착한 차량에서 그대로 인계 목록이 되는가’다. 집 확인은 원하는 사람만 켜는 보조 기능으로 제안한다. 비교 시험에서는 이름 직접 입력과 사진 등록의 소요 시간, 비슷한 포장의 오인 여부를 함께 기록한다.
+
 집에서 외가에 줄 과일과 친가에 줄 선물을 한 번 입력한다. 집에서는 둘 다 실었는지 확인하고, 외가에 도착하면 과일만, 친가에 도착하면 선물만 차량 화면에 띄우는 구상이다. 실었음과 전달했음은 사용자가 따로 확인한다.
 
 | 확인한 서비스 | 실제로 겹치는 부분 | 확인 범위 |
@@ -60,6 +66,8 @@
 최종 주제와 우선순위는 미정이다. 차량에서 읽을 수 있는 신호, 같은 문제를 해결하는 기존 제품, 당사자를 만날 수 있는지를 후보별로 확인한 뒤 결정한다.
 
 ## 원본과 출처
+
+- [SnapPack · 실물 사진 짐 목록](https://www.trysnappack.com/) · [Before You Go · 외출 점검, 사진 기록, CarPlay 연결 자동화](https://apps.apple.com/us/app/before-you-go-lock-stove/id6785884637)
 
 - [기아 PBV 배송 전·중·후 시나리오](https://www.kia.com/kr/pbv/solution/about-solution) · [Apple CarPlay와 Siri의 장소 알림 예시](https://support.apple.com/guide/iphone/use-siri-in-your-car-iph0aa8c80e6/26/ios/26) · [Geo2 Package Finder](https://geo2.com/route-planner) · [Memo Push 체크리스트](https://www.memopush.com/) · [Pocket Lists 위치 알림](https://pocketlists.com/help/26/location-based-reminders/)
 - [현대차그룹·42dot, 10월 30일 Gleo 업데이트](https://www.hyundaimotorgroup.com/ko/news/42dot-gleo-ai-first-ota-in-car-ai-experience-upgrade) · [Pleos 앱마켓 발표](https://www.hyundaimotorgroup.com/ko/news/42dot-pleos-connect-app-market-new-apps)
