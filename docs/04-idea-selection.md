@@ -1,5 +1,18 @@
 # 출품 주제 탐색
 
+## 11월 4일 우선 검토 · 한 번에 적는 방문지별 짐
+
+집에서 외가에 줄 과일과 친가에 줄 선물을 한 번 입력한다. 집에서는 둘 다 실었는지 확인하고, 외가에 도착하면 과일만, 친가에 도착하면 선물만 차량 화면에 띄우는 구상이다. 실었음과 전달했음은 사용자가 따로 확인한다.
+
+| 확인한 서비스 | 실제로 겹치는 부분 | 확인 범위 |
+|---|---|---|
+| 기아 PBV 배송 솔루션 사례 | 출발 전 차량 화면에서 일정·등록 물품 수를 확인하고 목적지별로 배송 물품 수와 상세 정보를 확인한다. 가장 가까운 차량 선례다. | 업무용 시나리오다. 가족이 직접 입력하는 승용 Pleos 앱의 출시 여부나 주차 순간 자동 팝업까지 보여 주는 자료는 아니다. [기아 공식 사례](https://www.kia.com/kr/pbv/solution/about-solution) |
+| Apple CarPlay + Siri 미리 알림 | 차 안에서 ‘집에 도착하면 우산 챙기기’ 같은 요청을 등록할 수 있다. 외가·친가 알림을 각각 만들면 목적지별로 기억할 일을 맡길 수 있다. | 공식 예시는 음성 등록이다. 차량 화면의 다중 경유지 짐 목록까지 확인한 것은 아니다. [Apple 사용 설명서](https://support.apple.com/guide/iphone/use-siri-in-your-car-iph0aa8c80e6/26/ios/26) |
+| Memo Push · Pocket Lists | 전자는 체크리스트를 장소에 연결해 떠날 때 미확인 물건을 알린다. 후자는 할 일에 도착·출발 위치 알림을 붙인다. | 출발 준비와 장소 알림 각각은 소비자용 대안이 있다. [Memo Push](https://www.memopush.com/) · [Pocket Lists](https://pocketlists.com/help/26/location-based-reminders/) |
+| Geo2 | 배송 기사가 출발 전 여러 정차지와 물품의 적재 위치를 등록하고 도착지별로 짐을 찾아 인도 내역을 남긴다. | 배송 실무용 모바일 서비스다. [Geo2 제품 안내](https://geo2.com/route-planner) |
+
+현대차·42dot의 10월 30일 Gleo 업데이트와 공개 앱마켓 자료에서 이 가족 방문 흐름 전체는 확인하지 못했다. 설치된 실차 앱 전체를 대조한 결과는 아니다. 독창성은 ‘장소 알림’이나 ‘차량에서 목적지별 물품 보기’만으로 주장하기 어렵다. 검증할 차이는 **개인이 물건과 전달처를 한 번만 입력하면 출발 준비와 방문지별 전달 확인을 모두 마칠 수 있는가**다. 출품 결정 전, 두 방문지에 줄 짐을 준비하는 같은 과제를 휴대폰 기본 알림과 시안으로 각각 수행해 입력 횟수·준비 시간·누락을 비교한다.
+
 ## 새 후보 · 물건 인계와 차량 오디오 검수
 
 | 후보 | 첫 시연 | 기존 서비스와 남은 질문 |
@@ -47,6 +60,9 @@
 최종 주제와 우선순위는 미정이다. 차량에서 읽을 수 있는 신호, 같은 문제를 해결하는 기존 제품, 당사자를 만날 수 있는지를 후보별로 확인한 뒤 결정한다.
 
 ## 원본과 출처
+
+- [기아 PBV 배송 전·중·후 시나리오](https://www.kia.com/kr/pbv/solution/about-solution) · [Apple CarPlay와 Siri의 장소 알림 예시](https://support.apple.com/guide/iphone/use-siri-in-your-car-iph0aa8c80e6/26/ios/26) · [Geo2 Package Finder](https://geo2.com/route-planner) · [Memo Push 체크리스트](https://www.memopush.com/) · [Pocket Lists 위치 알림](https://pocketlists.com/help/26/location-based-reminders/)
+- [현대차그룹·42dot, 10월 30일 Gleo 업데이트](https://www.hyundaimotorgroup.com/ko/news/42dot-gleo-ai-first-ota-in-car-ai-experience-upgrade) · [Pleos 앱마켓 발표](https://www.hyundaimotorgroup.com/ko/news/42dot-pleos-connect-app-market-new-apps)
 
 - [GearLog · 장비 대여·반납](https://play.google.com/store/apps/details?id=org.gearlog.app) · [MixShuffle · 차 안에서 음원 블라인드 비교](https://mixshuffle.com/)
 
