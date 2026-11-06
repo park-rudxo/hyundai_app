@@ -1,6 +1,20 @@
 # 챙겨가 개발 기록
 
-## 파일로 목록과 사진 전달
+## 2026년 11월 6일 · 0.2.0 같은 네트워크 전송
+
+휴대폰에서 준비한 방문지·사진·적재/전달 상태를 차량에 한 번 보내는 기능을 추가했다. 휴대폰에서 보내기 화면을 유지하고 차량에서 주소 입력 → 양쪽 확인 문구 비교 → 6자리 코드 입력 → 교체 확인을 거친다. 자세한 순서는 [실행 안내](../android/README.md)에 정리했다.
+
+TLS 1.2, AndroidKeyStore의 기기별 키, 전체 인증서 SHA-256 고정 검증을 사용한다. 사용자에게 비교하는 문구는 지문의 앞 96비트다. 확인 전에는 코드와 목록을 보내지 않는다. 세션은 5분/성공 1회/잘못된 코드 5회로 제한하고 화면 이탈 시 닫는다. 전송용 목록은 시작 시점에 고정하며 자동 동기화·역방향 반영은 없다. 가져오기 검증과 원자적 저장은 ZIP 방식과 공유한다. 내보낼 때도 압축 전 합계 20MB를 확인한다.
+
+초기 TLS 시험에서 AndroidKeyStore의 `Incompatible digest`를 확인했다. Conscrypt가 이미 해시한 TLS 서명 입력을 넘기는 경로에 맞춰 NONEwithECDSA 사용을 허용한 새 키 별칭으로 수정했다. 인증서 고정 검증은 유지한다.
+
+검증: 휴대폰·차량·시연 debug APK 빌드, 단위 테스트 6개, Pleos Android 14 AVD 계측 테스트 9개 모두 통과. 새 계측 테스트 5개는 별도 저장소 간 사진 바이트·방문지·상태 전송/재로딩, 잘못된 인증서 거부, 코드 5회 오류 후 종료, 만료와 명시 종료, 주소 범위를 확인한다. 기존 4개는 적재/전달/되돌리기, 주행 잠금, 사진 저장, ZIP 검증이다.
+
+새 APK 설치 후 휴대폰용 앱에서 보내기 대기를 시작·종료하고, 차량용 앱에서 실제 P단 연결과 수신 버튼 표시도 확인했다.
+
+**검증 범위:** 새 전송 테스트는 같은 AVD의 루프백에서 실행했다. 실제 두 기기 Wi-Fi, 핫스팟, 양산차의 네트워크 허용 여부와 입력 편의성은 미검증이다. 차량용 P단/UX 제한 처리는 기존 구현을 유지한다. 다음 작업은 실제 휴대폰과 수신 기기 연결 시험이다.
+
+## 이전 단계 · 파일로 목록과 사진 전달
 
 휴대폰·차량·시연 앱에 `목록 내보내기`와 `목록 가져오기`를 추가했다. 방문지, 사진, 적재·전달 상태를 한 ZIP에 담는다. 파일을 받는 기기에서는 교체 확인 후 가져오며 자동 동기화나 무선 전송 기능은 아니다. 사용자가 파일을 다른 기기로 옮겨야 한다.
 
@@ -77,3 +91,10 @@ Windows 한글 작업 경로에서 Android Gradle Plugin의 경로 검사가 빌
 - [주행 제한 API](https://developer.android.com/reference/android/car/drivingstate/CarUxRestrictionsManager)
 - [상태 로직 테스트 원본](../android/app/src/test/java/io/changyeoga/app/TripTest.kt)
 - [에뮬레이터 계측 테스트 원본](../android/app/src/androidTest/java/io/changyeoga/app/TripFlowTest.kt)
+
+### 무선 전송 구현 참고 원본
+
+- [Android KeyGenParameterSpec.Builder](https://developer.android.com/reference/android/security/keystore/KeyGenParameterSpec.Builder)
+- [Android 네트워크 보안 설정](https://developer.android.com/privacy-and-security/security-config)
+- 구현: `android/app/src/main/java/io/changyeoga/app/LocalTransfer.kt`, `WirelessTransferDialog.kt`
+- 검증 원본: `android/app/src/androidTest/java/io/changyeoga/app/LocalTransferTest.kt`

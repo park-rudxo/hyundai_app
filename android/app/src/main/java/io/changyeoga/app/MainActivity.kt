@@ -83,6 +83,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
     var pendingStop by rememberSaveable { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
     var importConfirm by remember { mutableStateOf(false) }
+    var wireless by remember { mutableStateOf(false) }
     val scope=rememberCoroutineScope()
     val allowed=if(BuildConfig.IS_DEMO) simulatedParked else vehicleAllowed
     val latestAllowed by rememberUpdatedState(allowed)
@@ -141,6 +142,21 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
         }
     }
     if(importConfirm && allowed) AlertDialog(onDismissRequest={importConfirm=false},title={Text("목록을 가져올까요?")},text={Text("현재 목록을 파일의 방문지·사진·체크 상태로 교체합니다. 필요한 목록은 먼저 내보내 주세요.")},confirmButton={TextButton(onClick={importConfirm=false;runCatching { importer.launch(arrayOf("application/zip","application/octet-stream")) }.onFailure { error="파일 선택 앱을 열 수 없습니다." }}){Text("파일 선택")}},dismissButton={TextButton(onClick={importConfirm=false}){Text("취소")}})
+    if(wireless && allowed) WirelessTransferDialog(
+        sender=!BuildConfig.IS_VEHICLE,
+        snapshot={
+            val current=trip
+            withContext(Dispatchers.IO) { java.io.ByteArrayOutputStream().also { store.exportTrip(current,it) }.toByteArray() }
+        },
+        applyArchive={ bytes ->
+            val previous=trip
+            val received=withContext(Dispatchers.IO) { store.importTrip(bytes.inputStream()) }
+            trip=received
+            previous.items.forEach { runCatching { store.deletePhoto(it.photo) } }
+            loadFailed=false;delivery=false;error="휴대폰의 목록과 사진을 받았습니다."
+        },
+        onDismiss={wireless=false},
+    )
     Surface(Modifier.fillMaxSize(),color=Ink) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal=if(compact) 16.dp else 28.dp,vertical=16.dp)) {
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
@@ -151,8 +167,9 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                 }
                 TextButton(onClick={reset=true},enabled=allowed&&!busy) { Text("새 외출") }
             }
-            Text(when { BuildConfig.IS_DEMO -> "시연 전용 · 주차와 도착을 직접 선택합니다"; BuildConfig.IS_VEHICLE -> signal; else -> "이 기기에 저장 · 차량 동기화는 준비 중" },color=Soft,fontSize=14.sp)
-            if(allowed) Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+            Text(when { BuildConfig.IS_DEMO -> "시연 전용 · 주차와 도착을 직접 선택합니다"; BuildConfig.IS_VEHICLE -> signal; else -> "사진으로 준비하고 · 같은 Wi-Fi에서 차량으로 전송" },color=Soft,fontSize=14.sp)
+            if(allowed) Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                Button(enabled=!busy&&!loadFailed,onClick={wireless=true}) { Text(if(BuildConfig.IS_VEHICLE) "휴대폰에서 받기" else "차량으로 보내기") }
                 TextButton(enabled=!busy&&!loadFailed,onClick={runCatching { exporter.launch("changyeoga-trip.zip") }.onFailure { error="파일 저장 앱을 열 수 없습니다." }}) { Text("목록 내보내기") }
                 TextButton(enabled=!busy,onClick={importConfirm=true}) { Text("목록 가져오기") }
             }

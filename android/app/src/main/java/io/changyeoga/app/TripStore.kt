@@ -40,9 +40,15 @@ class TripStore(private val context: Context) {
         return j.toString().toByteArray()
     }
     fun exportTrip(trip: Trip, output: java.io.OutputStream) {
+        val metadata = encode(trip)
+        decode(metadata)
+        val photos = trip.items.mapNotNull { it.photo }.distinct()
+        require(metadata.size.toLong() + photos.sumOf { photoFile(it).length() } <= 20L * 1024 * 1024) {
+            "사진과 목록은 20MB 이하만 전송할 수 있습니다."
+        }
         java.util.zip.ZipOutputStream(output).use { zip ->
-            zip.putNextEntry(java.util.zip.ZipEntry("trip.json")); zip.write(encode(trip)); zip.closeEntry()
-            trip.items.mapNotNull { it.photo }.distinct().forEach { name ->
+            zip.putNextEntry(java.util.zip.ZipEntry("trip.json")); zip.write(metadata); zip.closeEntry()
+            photos.forEach { name ->
                 zip.putNextEntry(java.util.zip.ZipEntry("photos/$name"))
                 photoFile(name).inputStream().use { it.copyTo(zip) }; zip.closeEntry()
             }
