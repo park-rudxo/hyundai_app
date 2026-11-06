@@ -19,7 +19,7 @@ class TripStore(private val context: Context) {
     private fun decode(bytes: ByteArray): Trip {
         val j = JSONObject(bytes.toString(Charsets.UTF_8))
         require(j.getInt("version") == 1) { "지원하지 않는 저장 형식입니다." }
-        val stops = j.getJSONArray("stops").let { a -> (0 until a.length()).map { a.getJSONObject(it).let { Stop(it.getString("id"),it.getString("name")) } } }
+        val stops = j.getJSONArray("stops").let { a -> (0 until a.length()).map { a.getJSONObject(it).let { Stop(it.getString("id"),it.getString("name"),if(it.isNull("latitude")) null else it.getDouble("latitude"),if(it.isNull("longitude")) null else it.getDouble("longitude")) } } }
         val items = j.getJSONArray("items").let { a -> (0 until a.length()).map { a.getJSONObject(it).let { Luggage(it.getString("id"),it.getString("stopId"),it.getString("label"),if (it.isNull("photo")) null else it.getString("photo"),ItemState.valueOf(it.getString("state"))) } } }
         require(items.all { item -> stops.any { it.id == item.stopId } })
         require(stops.size <= 50 && items.size <= 100)
@@ -35,7 +35,7 @@ class TripStore(private val context: Context) {
     }
     private fun encode(trip: Trip): ByteArray {
         val j = JSONObject().put("version",1).put("example",trip.example).put("selected",trip.selectedStopId)
-        j.put("stops",JSONArray().apply { trip.stops.forEach { put(JSONObject().put("id",it.id).put("name",it.name)) } })
+        j.put("stops",JSONArray().apply { trip.stops.forEach { put(JSONObject().put("id",it.id).put("name",it.name).put("latitude",it.latitude ?: JSONObject.NULL).put("longitude",it.longitude ?: JSONObject.NULL)) } })
         j.put("items",JSONArray().apply { trip.items.forEach { put(JSONObject().put("id",it.id).put("stopId",it.stopId).put("label",it.label).put("photo",it.photo ?: JSONObject.NULL).put("state",it.state.name)) } })
         return j.toString().toByteArray()
     }

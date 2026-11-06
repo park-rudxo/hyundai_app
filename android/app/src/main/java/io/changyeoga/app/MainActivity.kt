@@ -173,6 +173,9 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                 TextButton(enabled=!busy&&!loadFailed,onClick={runCatching { exporter.launch("changyeoga-trip.zip") }.onFailure { error="파일 저장 앱을 열 수 없습니다." }}) { Text("목록 내보내기") }
                 TextButton(enabled=!busy,onClick={importConfirm=true}) { Text("목록 가져오기") }
             }
+            TripAssistant(trip,allowed&&!busy&&!loadFailed,onSave={commit(it)},onArrive={ id ->
+                if(allowed&&!busy&&!loadFailed) { commit(trip.selectStop(id));delivery=true }
+            },onPrepare={delivery=false})
             if(BuildConfig.IS_DEMO) {
                 Row(verticalAlignment=Alignment.CenterVertically) {
                     Switch(checked=simulatedParked,onCheckedChange={simulatedParked=it},modifier=Modifier.testTag("parkingSwitch"))

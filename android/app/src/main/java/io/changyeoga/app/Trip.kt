@@ -2,7 +2,9 @@ package io.changyeoga.app
 
 import java.util.UUID
 
-data class Stop(val id: String = UUID.randomUUID().toString(), val name: String)
+data class Stop(val id: String = UUID.randomUUID().toString(), val name: String, val latitude: Double? = null, val longitude: Double? = null) {
+    init { require((latitude == null) == (longitude == null)); require(latitude == null || (latitude.isFinite() && latitude in -90.0..90.0)); require(longitude == null || (longitude.isFinite() && longitude in -180.0..180.0)) }
+}
 enum class ItemState { READY, LOADED, DELIVERED }
 data class Luggage(val id: String = UUID.randomUUID().toString(), val stopId: String, val label: String = "사진 짐", val photo: String? = null, val state: ItemState = ItemState.READY)
 data class Trip(val stops: List<Stop> = emptyList(), val items: List<Luggage> = emptyList(), val selectedStopId: String? = null, val example: Boolean = false) {

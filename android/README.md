@@ -1,6 +1,6 @@
 # 챙겨가 Android 첫 실행 버전
 
-사진으로 등록한 짐을 방문지별로 나누고 적재와 전달을 별도로 확인하는 Kotlin·Jetpack Compose 앱입니다. 현재 버전은 **같은 네트워크에서 목록을 전달할 수 있는 0.2.0 개발용 앱**입니다.
+사진으로 등록한 짐을 방문지별로 나누고 적재와 전달을 별도로 확인하는 Kotlin·Jetpack Compose 앱입니다. 현재 버전은 **같은 네트워크에서 목록을 전달할 수 있는 0.3.0 개발용 앱**입니다.
 
 ## 실행 버전
 
@@ -33,6 +33,15 @@
 시작 시점의 목록을 한 번 전송합니다. 수정 후에는 다시 보내야 합니다. 세션은 5분, 성공 1회 또는 잘못된 코드 5회까지이며 휴대폰 앱을 나가면 종료됩니다. 사진과 목록은 합계 20MB 이하입니다. TLS 1.2와 인증서 확인을 사용하고, 외부 서버에 업로드하지 않습니다.
 
 같은 Wi-Fi여도 공유기의 기기 간 통신 차단, 차량의 네트워크 정책 때문에 연결되지 않을 수 있습니다. 이 경우 기존 `목록 내보내기/가져오기`로 ZIP을 이동할 수 있습니다. **현재 검증은 Pleos AVD 내부 루프백 전송이며 실제 휴대폰↔차량 Wi-Fi 왕복은 아직 확인하지 않았습니다.**
+
+## 휴대폰 GPS와 음성 명령 (0.3.0)
+
+- 휴대폰 앱에서 방문지를 고른 뒤 `휴대폰 GPS 켜기`로 정확한 위치 권한을 허용합니다. `방문지 위치`에 목적지 위도·경도를 입력하거나 **그 목적지에 실제로 있을 때** `현재 GPS 사용 → 위치 저장`을 누릅니다. 주소 검색·지도 선택은 아직 없습니다.
+- 이 화면이 켜져 있을 때만 GPS를 구독합니다. 다른 앱으로 이동하거나 화면이 꺼지면 중단되고 돌아오면 다시 시작합니다. 배경 감지·알림 서비스는 아직 없으므로 운전 중 화면 조작 대신 동승자가 시험합니다.
+- 정확도 50m 이내, 15초 이내의 위치를 사용합니다. 거리+오차가 150m 이내인 상태가 20초 이어지면 방문지 근처 안내와 해당 짐 화면을 표시합니다. 이는 도착 후보이며 정차나 실제 전달을 증명하지 않습니다. 인접 목적지가 모호하면 자동 선택하지 않습니다. 세션 내 재안내는 500m 밖으로 나간 뒤 재접근할 때 가능합니다.
+- 위치는 **휴대폰에서 감지·안내**합니다. 차량에 실시간 위치를 중계하지 않습니다. 저장한 목적지 좌표는 기존 일회 목록 전송에 포함됩니다. 이동 경로는 저장하지 않습니다.
+- `음성 명령`은 설치된 Android 음성 인식 앱을 호출합니다. `짐 알려줘`, `짐 읽어줘`, `외가 도착`(등록한 방문지 이름), `출발 준비`를 지원하며 인식된 문장을 확인한 후 실행합니다. 적재·전달 완료는 자동 처리하지 않습니다. 같은 이름이 여러 개면 음성 선택을 거부합니다.
+- 음성 인식 앱/한국어 TTS가 없으면 버튼·글 안내를 사용합니다. 음성 인식 제공자에 따라 인터넷 및 제공자의 음성 처리가 필요할 수 있습니다. 상시 듣기나 Pleos 기본 음성 비서 연동은 아닙니다. 차량 버전은 기존 P단·UX 제한이 허용할 때만 명령 UI를 제공합니다.
 
 ## 개발 환경과 빌드
 
@@ -81,3 +90,7 @@ adb shell am start -n io.changyeoga.app/.MainActivity
 - [AAOS VehiclePropertyIds](https://developer.android.com/reference/android/car/VehiclePropertyIds): GEAR_SELECTION을 통한 P단 확인. 신호를 읽을 수 없으면 잠급니다.
 - [공식 Vehicle 샘플](https://github.com/Pleos-Playground/pleos-sample-vehicle-app/tree/959981d): 검증된 Gradle wrapper와 의존성 버전을 참고했습니다. 앱 구현은 새로 작성했습니다. Gradle wrapper 파일의 Apache 2.0 고지를 유지했습니다.
 - [기획서 초안](../docs/15-proposal-draft.md), [검증 기록](../docs/16-development-log.md).
+
+- [Android 위치 권한](https://developer.android.com/develop/sensors-and-location/location/permissions)
+- [LocationManager](https://developer.android.com/reference/android/location/LocationManager)
+- [RecognizerIntent](https://developer.android.com/reference/android/speech/RecognizerIntent)

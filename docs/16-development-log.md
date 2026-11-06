@@ -1,5 +1,15 @@
 # 챙겨가 개발 기록
 
+## 2026년 11월 6일 · 0.3.0 휴대폰 GPS와 음성 명령
+
+실차 없이 시험하도록 휴대폰 앱에 GPS 위치 구독과 방문지 좌표 등록을 추가했다. 방문지 좌표는 기존 저장 형식의 선택 필드로 추가하여 좌표 없는 기존 목록도 읽으며 ZIP·암호화 전송에 함께 포함한다. 현재 위치 또는 위도·경도 직접 입력으로 설정한다. 주소 검색은 없다.
+
+GPS는 앱이 보이는 동안만 동작한다. 오차·수신 시각·연속 체류·인접 목적지 모호성을 검사하여 도착 후보를 안내하고 짐 화면을 연다. 적재/전달 상태는 바꾸지 않는다. 감지 장소는 휴대폰이며 차량으로 실시간 중계하지 않는다. 화면 이탈 후 재개하면 새로운 감지 세션이라 같은 방문지를 다시 안내할 수 있다.
+
+Android 음성 인식 앱을 통한 명령 입력, 실행 전 확인, 한국어 TTS 짐 개수 안내를 추가했다. ‘짐 알려줘’, ‘방문지 이름 + 도착’, ‘출발 준비’를 지원한다. 인식 앱이나 한국어 TTS가 없는 환경에서는 버튼·문자로 대체한다. 마이크 상시 수집과 Pleos 음성 비서 연동은 없다.
+
+검증: 단위 테스트 11개, Pleos AVD 계측 테스트 9개 통과. GPS 연속 체류·재접근·오래된/부정확한 위치·중복 샘플·인접 방문지 모호성·음성 부정문/동명 방문지·좌표 범위를 검사했다. 암호화 전송 시험에 좌표 왕복도 포함했다. 휴대폰 APK를 AVD에 설치하여 모의 GPS 37.0, 127.0을 수신하고 ‘현재 GPS 사용’으로 등록되는 것을 확인했다. 실기기 GPS 정확도와 실제 발화 인식/음성 출력은 미검증이다. 현재 AVD에서는 한국어 TTS 준비 전 상태가 표시된다. 모의 GPS 체류 후 ‘외가 근처입니다’ 안내와 ‘외가에서 건넬 짐’ 화면 전환까지 확인했다. 음성 명령 버튼은 AVD에 인식 앱이 없어 대체 안내가 표시되는 것을 확인했다.
+
 ## 2026년 11월 6일 · 0.2.0 같은 네트워크 전송
 
 휴대폰에서 준비한 방문지·사진·적재/전달 상태를 차량에 한 번 보내는 기능을 추가했다. 휴대폰에서 보내기 화면을 유지하고 차량에서 주소 입력 → 양쪽 확인 문구 비교 → 6자리 코드 입력 → 교체 확인을 거친다. 자세한 순서는 [실행 안내](../android/README.md)에 정리했다.
@@ -98,3 +108,10 @@ Windows 한글 작업 경로에서 Android Gradle Plugin의 경로 검사가 빌
 - [Android 네트워크 보안 설정](https://developer.android.com/privacy-and-security/security-config)
 - 구현: `android/app/src/main/java/io/changyeoga/app/LocalTransfer.kt`, `WirelessTransferDialog.kt`
 - 검증 원본: `android/app/src/androidTest/java/io/changyeoga/app/LocalTransferTest.kt`
+
+### GPS·음성 구현 원본과 출처
+
+- 구현: `Arrival.kt`, `TripAssistant.kt`; 검증: `ArrivalTest.kt`, `LocalTransferTest.kt`
+- [Android 위치 권한](https://developer.android.com/develop/sensors-and-location/location/permissions)
+- [LocationManager](https://developer.android.com/reference/android/location/LocationManager)
+- [RecognizerIntent](https://developer.android.com/reference/android/speech/RecognizerIntent)

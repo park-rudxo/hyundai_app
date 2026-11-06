@@ -23,7 +23,7 @@ class LocalTransferTest {
         val bitmap=Bitmap.createBitmap(50,50,Bitmap.Config.ARGB_8888).apply { eraseColor(android.graphics.Color.BLUE) }
         val photo=sender.savePhoto(bitmap)
         bitmap.recycle()
-        val original=Trip.example().addItem(Luggage(stopId="grandma",photo=photo)).changeState("fruit",ItemState.LOADED)
+        val original=Trip.example().let { it.copy(stops=it.stops.map { stop -> stop.copy(latitude=37.0,longitude=127.0) }) }.addItem(Luggage(stopId="grandma",photo=photo)).changeState("fruit",ItemState.LOADED)
         val output=ByteArrayOutputStream()
         sender.exportTrip(original,output)
         LocalTransferServer.start(output.toByteArray()).use { server ->
