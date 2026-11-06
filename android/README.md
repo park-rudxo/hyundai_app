@@ -1,0 +1,71 @@
+# 챙겨가 Android 첫 실행 버전
+
+사진으로 등록한 짐을 방문지별로 나누고 적재와 전달을 별도로 확인하는 Kotlin·Jetpack Compose 앱입니다. 현재 버전은 **각 기기에 독립적으로 저장하는 0.1.0 개발용 앱**입니다.
+
+## 실행 버전
+
+| 빌드 | 앱 이름 | 용도 |
+|---|---|---|
+| phoneDebug | 챙겨가 준비 | 휴대폰에서 방문지 추가, 카메라 촬영 또는 사진 선택, 상태 확인 |
+| vehicleDebug | 챙겨가 | AAOS의 실제 P단과 CarUxRestrictions를 읽고 둘 다 허용할 때만 조작 가능 |
+| demoDebug | 챙겨가 시연 | 모의 P단 스위치가 있는 개발 시연 전용. 실제 차량 신호를 읽지 않음 |
+
+시연용은 차량용과 패키지가 다릅니다. 실제 차량용에는 모의 잠금 해제 스위치가 없습니다. 세 APK는 디버그 서명이며 공모전 제출용 release가 아닙니다.
+
+## 현재 가능한 흐름
+
+1. `첫 방문지 추가`에서 외가·친가 등 방문지 이름을 입력합니다. 내비 목적지 연결은 아직 없습니다.
+2. 방문지를 선택하고 사진을 추가합니다. 휴대폰용은 외부 카메라 앱의 촬영 미리보기 또는 사진 선택을 사용합니다. 원본 대신 앱 내부에 JPEG 사본을 저장하므로 선택한 사진 파일을 나중에 이동해도 목록이 유지됩니다. 촬영은 현재 저해상도 미리보기이며 고해상도 촬영은 후속 작업입니다.
+3. 짐을 실제로 실은 뒤 `실었어요`를 누릅니다.
+4. `도착·전달`에서 방문지를 직접 선택하고 `건넸어요`를 누릅니다. 적재 확인 전에는 전달 완료로 바꿀 수 없습니다. 도착지를 선택하는 것만으로 완료 처리하지 않습니다.
+5. `되돌리기`로 직전 상태로 돌아갑니다. 강제 종료·재실행 시 사진, 방문지, 상태를 복원합니다.
+
+사진이 없어도 `예시로 둘러보기`로 두 방문지와 짐의 흐름을 확인할 수 있습니다. 예시 항목은 실제 촬영 사진이 없다는 표시를 유지합니다. `새 외출`은 확인 대화상자 후 현재 목록을 초기화합니다.
+
+## 개발 환경과 빌드
+
+JDK 17, Android SDK Platform 35, Android Gradle Plugin 8.8.2, Kotlin 2.0.0, Gradle wrapper 8.10.2를 사용합니다. Android 8(API 26) 이상을 대상으로 합니다. 차량용은 AAOS 및 `android.car` 라이브러리가 있는 환경이 필요합니다.
+
+Windows PowerShell에서:
+
+```powershell
+cd android
+# JAVA_HOME, ANDROID_HOME이 설정돼 있으면 그 값을 사용합니다.
+.\build.ps1
+# 연결된 Pleos 에뮬레이터에서 UI 검증
+.\build.ps1 -Tasks ':app:connectedDemoDebugAndroidTest'
+```
+
+Windows의 한글 프로젝트 경로에서 Gradle 테스트 JVM이 클래스를 찾지 못하는 문제를 피하려고 스크립트는 생성물을 `%LOCALAPPDATA%/Changyeoga/build/app`에 둡니다. 소스는 현재 저장소에 그대로 있습니다. Windows 사용자 폴더도 한글인 경우 `gradlew.bat`에 `-PbuildRoot=C:/영문경로` 형태의 실제 영문 경로를 직접 지정합니다.
+
+영문 경로의 다른 환경에서는:
+
+```sh
+sh gradlew :app:assemblePhoneDebug :app:assembleVehicleDebug :app:assembleDemoDebug :app:testDemoDebugUnitTest
+```
+
+APK는 `<buildRoot>/app/outputs/apk/<flavor>/debug/`에 생성됩니다. buildRoot를 지정하지 않으면 `app/build/outputs/apk/`입니다.
+
+이 PC에서는 Pleos AVD의 화면 갱신 지연을 관찰했습니다. `-gpu swiftshader_indirect -no-snapshot-load -no-snapshot-save` 옵션으로 재시작한 뒤 정상 표시와 조작을 확인했습니다. 부팅 직후 기본 내비가 전면으로 열릴 수 있으므로 초기 로딩 후 앱을 다시 선택합니다. 자세한 관찰은 개발 기록에 남겼습니다.
+
+```powershell
+adb install -r <APK경로>
+adb shell am start -n io.changyeoga.app/.MainActivity
+# 시연용: io.changyeoga.app.demo/.MainActivity
+# 휴대폰용: io.changyeoga.app.phone/.MainActivity
+```
+
+## 아직 연결하지 않은 기능
+
+- 휴대폰↔차량 사진·목록 동기화: 현재 서로 다른 앱/기기의 목록은 독립적입니다.
+- NaviHelper 목적지·경유지 및 자동 도착 이벤트: 현재 직접 선택합니다.
+- 예상 출발 N분 전 예약 알림과 외출 전 점검 사진의 별도 분류.
+- 실제 휴대폰 카메라와 양산차 검증, release 서명, 앱마켓 심사.
+- 차량용 화면 크기·카메라 품질 등 실제 사용 환경의 추가 조정.
+
+## 원본과 출처
+
+- [Pleos 주행 제한 개발 가이드](https://document.pleos.ai/en/docs/pleos-only/vehicle-app-developer-guide/driving-restriction-development-guide): CarUxRestrictionsManager 연결 근거.
+- [AAOS VehiclePropertyIds](https://developer.android.com/reference/android/car/VehiclePropertyIds): GEAR_SELECTION을 통한 P단 확인. 신호를 읽을 수 없으면 잠급니다.
+- [공식 Vehicle 샘플](https://github.com/Pleos-Playground/pleos-sample-vehicle-app/tree/959981d): 검증된 Gradle wrapper와 의존성 버전을 참고했습니다. 앱 구현은 새로 작성했습니다. Gradle wrapper 파일의 Apache 2.0 고지를 유지했습니다.
+- [기획서 초안](../docs/15-proposal-draft.md), [검증 기록](../docs/16-development-log.md).

@@ -1,0 +1,3 @@
+1f4ad2a4d99f7bf9d907563241db4964819c2a79f8bb2f37ccfbb4bf6c88985f  changyeoga-demo-debug.apk
+eb6d9cebad6ef3d4a7a6677fdea3e5a32d87139005aad00bc3b0cc11ea002b5d  changyeoga-phone-debug.apk
+863f49db6a117460e25c321e3b00697e83be8baca002ca086534cfe40e215c56  changyeoga-vehicle-debug.apk
