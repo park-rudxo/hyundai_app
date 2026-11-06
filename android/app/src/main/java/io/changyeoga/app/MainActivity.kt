@@ -82,6 +82,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
     var reset by rememberSaveable { mutableStateOf(false) }
     var pendingStop by rememberSaveable { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
+    var importConfirm by remember { mutableStateOf(false) }
     val scope=rememberCoroutineScope()
     val allowed=if(BuildConfig.IS_DEMO) simulatedParked else vehicleAllowed
     val latestAllowed by rememberUpdatedState(allowed)
@@ -114,6 +115,32 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
     val picker=rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if(uri != null) acceptPhoto { store.importPhoto(uri) } else pendingStop=null
     }
+    val exporter=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+        if(uri!=null) {
+            busy=true
+            val snapshot=trip
+            scope.launch {
+                try { withContext(Dispatchers.IO) { store.exportTrip(snapshot,requireNotNull(context.contentResolver.openOutputStream(uri))) }; error="내보내기 완료 · 파일을 다른 기기로 옮겨 가져오세요." }
+                catch(_:Exception) { error="내보내지 못했습니다. 저장 위치를 확인해 주세요." }
+                finally { busy=false }
+            }
+        }
+    }
+    val importer=rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if(uri!=null) {
+            busy=true
+            scope.launch {
+                try {
+                    val previous=trip
+                    trip=withContext(Dispatchers.IO) { store.importTrip(requireNotNull(context.contentResolver.openInputStream(uri))) }
+                    previous.items.forEach { store.deletePhoto(it.photo) }
+                    loadFailed=false; delivery=false; error="가져오기 완료 · 파일에 저장된 시점의 목록입니다."
+                } catch(_:Exception) { error="가져오지 못했습니다. 기존 목록은 유지됩니다." }
+                finally { busy=false }
+            }
+        }
+    }
+    if(importConfirm && allowed) AlertDialog(onDismissRequest={importConfirm=false},title={Text("목록을 가져올까요?")},text={Text("현재 목록을 파일의 방문지·사진·체크 상태로 교체합니다. 필요한 목록은 먼저 내보내 주세요.")},confirmButton={TextButton(onClick={importConfirm=false;runCatching { importer.launch(arrayOf("application/zip","application/octet-stream")) }.onFailure { error="파일 선택 앱을 열 수 없습니다." }}){Text("파일 선택")}},dismissButton={TextButton(onClick={importConfirm=false}){Text("취소")}})
     Surface(Modifier.fillMaxSize(),color=Ink) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal=if(compact) 16.dp else 28.dp,vertical=16.dp)) {
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
@@ -125,6 +152,10 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                 TextButton(onClick={reset=true},enabled=allowed&&!busy) { Text("새 외출") }
             }
             Text(when { BuildConfig.IS_DEMO -> "시연 전용 · 주차와 도착을 직접 선택합니다"; BuildConfig.IS_VEHICLE -> signal; else -> "이 기기에 저장 · 차량 동기화는 준비 중" },color=Soft,fontSize=14.sp)
+            if(allowed) Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                TextButton(enabled=!busy&&!loadFailed,onClick={runCatching { exporter.launch("changyeoga-trip.zip") }.onFailure { error="파일 저장 앱을 열 수 없습니다." }}) { Text("목록 내보내기") }
+                TextButton(enabled=!busy,onClick={importConfirm=true}) { Text("목록 가져오기") }
+            }
             if(BuildConfig.IS_DEMO) {
                 Row(verticalAlignment=Alignment.CenterVertically) {
                     Switch(checked=simulatedParked,onCheckedChange={simulatedParked=it},modifier=Modifier.testTag("parkingSwitch"))

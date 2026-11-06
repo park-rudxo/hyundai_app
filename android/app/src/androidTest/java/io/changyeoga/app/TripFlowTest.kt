@@ -57,4 +57,24 @@ class TripFlowTest {
         store.save(Trip())
         bitmap.recycle()
     }
+    @Test fun transferRoundTripAndRejectUnsafeArchive() {
+        val context=ApplicationProvider.getApplicationContext<Context>()
+        val store=TripStore(context)
+        val bitmap=Bitmap.createBitmap(32,32,Bitmap.Config.ARGB_8888)
+        val photo=store.savePhoto(bitmap)
+        val original=Trip.example().addItem(Luggage(stopId="grandpa",photo=photo)).changeState("fruit",ItemState.LOADED)
+        val bytes=java.io.ByteArrayOutputStream()
+        store.exportTrip(original,bytes)
+        store.save(Trip())
+        val imported=store.importTrip(bytes.toByteArray().inputStream())
+        assertEquals(original.stops,imported.stops)
+        assertEquals(original.items.map{it.state},imported.items.map{it.state})
+        assertNotEquals(photo,imported.items.last().photo)
+        assertArrayEquals(store.photoFile(photo).readBytes(),store.photoFile(imported.items.last().photo!!).readBytes())
+        val bad=java.io.ByteArrayOutputStream()
+        java.util.zip.ZipOutputStream(bad).use { it.putNextEntry(java.util.zip.ZipEntry("../trip.json"));it.write(byteArrayOf(1));it.closeEntry() }
+        assertTrue(runCatching { store.importTrip(bad.toByteArray().inputStream()) }.isFailure)
+        assertEquals(imported,store.load())
+        store.deletePhoto(photo);store.deletePhoto(imported.items.last().photo);store.save(Trip());bitmap.recycle()
+    }
 }
