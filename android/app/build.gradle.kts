@@ -1,8 +1,15 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
+val localConfig = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+val naverMapKey = (localConfig.getProperty("NAVER_MAP_CLIENT_ID") ?: System.getenv("NAVER_MAP_CLIENT_ID") ?: "").trim()
+require(naverMapKey.matches(Regex("[A-Za-z0-9_-]*"))) { "Invalid NAVER_MAP_CLIENT_ID format" }
 // Gradle's Windows test worker can lose non-ASCII classpath entries.
 // Keep source in the workspace and optionally put generated output in an ASCII path.
 providers.gradleProperty("buildRoot").orNull?.let { layout.buildDirectory.set(file("$it/app")) }
@@ -11,12 +18,15 @@ android {
     compileSdk = 35
     useLibrary("android.car", false)
     defaultConfig {
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64") }
         applicationId = "io.changyeoga.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.4.0"
+        versionCode = 5
+        versionName = "0.5.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders["naverMapKey"] = naverMapKey
+        buildConfigField("boolean", "HAS_NAVER_MAP_KEY", naverMapKey.isNotEmpty().toString())
     }
     flavorDimensions += "surface"
     productFlavors {
@@ -30,6 +40,9 @@ android {
     testOptions { unitTests.all { it.jvmArgs("-Dfile.encoding=UTF-8") } }
 }
 dependencies {
+    add("vehicleImplementation", "ai.pleos.playground:NaviHelper:3.0.5")
+    add("phoneImplementation", "com.naver.maps:map-sdk:3.24.0")
+    add("phoneImplementation", "androidx.fragment:fragment-ktx:1.8.6")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)

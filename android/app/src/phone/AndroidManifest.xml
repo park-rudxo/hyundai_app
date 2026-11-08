@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <meta-data android:name="com.naver.maps.map.NCP_KEY_ID" android:value="${naverMapKey}" />
+        <activity android:name=".PlaceMapActivity" android:exported="false" />
+    </application>
+</manifest>

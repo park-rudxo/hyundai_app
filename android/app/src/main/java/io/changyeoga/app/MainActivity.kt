@@ -89,6 +89,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
     var stopName by rememberSaveable { mutableStateOf("") }
     var reset by rememberSaveable { mutableStateOf(false) }
     var pendingStop by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingMapStop by rememberSaveable { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
     var importConfirm by remember { mutableStateOf(false) }
     var wireless by remember { mutableStateOf(false) }
@@ -123,6 +124,17 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
     }
     val picker=rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if(uri != null) acceptPhoto { store.importPhoto(uri) } else pendingStop=null
+    }
+    val placeMap=rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val id=pendingMapStop
+        pendingMapStop=null
+        if(result.resultCode==android.app.Activity.RESULT_OK && id!=null) {
+            val lat=result.data?.getDoubleExtra("latitude",Double.NaN) ?: Double.NaN
+            val lon=result.data?.getDoubleExtra("longitude",Double.NaN) ?: Double.NaN
+            if(lat.isFinite() && lon.isFinite() && lat in -90.0..90.0 && lon in -180.0..180.0) {
+                commit(trip.copy(stops=trip.stops.map { if(it.id==id) it.copy(latitude=lat,longitude=lon) else it }))
+            } else error="선택한 위치를 읽지 못했습니다. 다시 선택해 주세요."
+        }
     }
     val exporter=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
         if(uri!=null) {
@@ -238,9 +250,18 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                     }
                     val stop=trip.stops.firstOrNull { it.id==trip.selectedStopId } ?: trip.stops.first()
                     val items=trip.forStop(stop.id)
+                    VehicleMapActions(stop,allowed&&!busy)
                     if(phone && step==0) {
                         Text("오늘 들를 곳을 추가해 주세요",fontSize=26.sp,modifier=Modifier.padding(vertical=20.dp))
                         Text("방문지를 모두 추가했으면 다음으로 진행하세요. 위치는 나중에 등록해도 괜찮아요.",color=Soft)
+                        Button(onClick={
+                            pendingMapStop=stop.id
+                            val intent=android.content.Intent().setClassName(context,"io.changyeoga.app.PlaceMapActivity")
+                            stop.latitude?.let { intent.putExtra("latitude",it) }
+                            stop.longitude?.let { intent.putExtra("longitude",it) }
+                            runCatching { placeMap.launch(intent) }.onFailure { pendingMapStop=null;error="지도 화면을 열지 못했습니다." }
+                        },enabled=!busy,modifier=Modifier.padding(top=16.dp).heightIn(min=56.dp)) { Text("${stop.name} · 지도에서 위치 선택") }
+                        Text(if(stop.latitude==null) "위치 미등록 · 사진 등록은 계속할 수 있어요" else "방문지 위치 저장됨",color=Soft)
                         Spacer(Modifier.weight(1f))
                     } else if(phone && step==3) {
                         Text("준비한 짐을 차량으로 보내세요",fontSize=26.sp,modifier=Modifier.padding(vertical=20.dp))
