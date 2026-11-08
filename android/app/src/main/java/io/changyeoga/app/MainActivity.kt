@@ -76,6 +76,14 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
     var error by remember { mutableStateOf(if(loaded.isFailure) "저장된 목록을 읽지 못했습니다. 기존 파일을 보존했습니다." else "") }
     var loadFailed by remember { mutableStateOf(loaded.isFailure) }
     var delivery by rememberSaveable { mutableStateOf(false) }
+    val flowPrefs=remember { context.getSharedPreferences("trip-flow",android.content.Context.MODE_PRIVATE) }
+    var step by rememberSaveable { mutableStateOf(if(trip.stops.isEmpty()) 0 else flowPrefs.getInt("step",0).coerceIn(0,4)) }
+    LaunchedEffect(step) { if(!BuildConfig.IS_VEHICLE) flowPrefs.edit().putInt("step",step).apply() }
+    LaunchedEffect(step) { if(!BuildConfig.IS_VEHICLE) delivery=step==4 }
+    var more by remember { mutableStateOf(false) }
+    var tools by remember { mutableStateOf(false) }
+    val phone = !BuildConfig.IS_VEHICLE
+    val steps = listOf("방문지 정하기", "짐 사진 등록", "차에 싣기", "차량에 보내기", "도착 후 전달")
     var simulatedParked by rememberSaveable { mutableStateOf(true) }
     var addStop by rememberSaveable { mutableStateOf(false) }
     var stopName by rememberSaveable { mutableStateOf("") }
@@ -135,7 +143,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                     val previous=trip
                     trip=withContext(Dispatchers.IO) { store.importTrip(requireNotNull(context.contentResolver.openInputStream(uri))) }
                     previous.items.forEach { store.deletePhoto(it.photo) }
-                    loadFailed=false; delivery=false; error="가져오기 완료 · 파일에 저장된 시점의 목록입니다."
+                    loadFailed=false; delivery=false; step=0; error="가져오기 완료 · 파일에 저장된 시점의 목록입니다."
                 } catch(_:Exception) { error="가져오지 못했습니다. 기존 목록은 유지됩니다." }
                 finally { busy=false }
             }
@@ -165,17 +173,29 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                     Spacer(Modifier.width(18.dp))
                     Text(if(BuildConfig.IS_VEHICLE) "오늘의 방문" else "외출 준비",color=Soft,fontSize=18.sp)
                 }
-                TextButton(onClick={reset=true},enabled=allowed&&!busy) { Text("새 외출") }
+                Box {
+                    TextButton(onClick={more=true},enabled=allowed&&!busy) { Text("더보기") }
+                    DropdownMenu(expanded=more,onDismissRequest={more=false}) {
+                        DropdownMenuItem(text={Text("새 외출")},onClick={more=false;reset=true})
+                        DropdownMenuItem(text={Text("위치·음성 도구")},onClick={more=false;tools=!tools})
+                        DropdownMenuItem(text={Text("목록 내보내기")},enabled=!loadFailed,onClick={more=false;runCatching{exporter.launch("changyeoga-trip.zip")}.onFailure{error="파일 저장 앱을 열 수 없습니다."}})
+                        DropdownMenuItem(text={Text("목록 가져오기")},onClick={more=false;importConfirm=true})
+                    }
+                }
             }
             Text(when { BuildConfig.IS_DEMO -> "시연 전용 · 주차와 도착을 직접 선택합니다"; BuildConfig.IS_VEHICLE -> signal; else -> "사진으로 준비하고 · 같은 Wi-Fi에서 차량으로 전송" },color=Soft,fontSize=14.sp)
-            if(allowed) Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+            if(allowed && BuildConfig.IS_VEHICLE) Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                 Button(enabled=!busy&&!loadFailed,onClick={wireless=true}) { Text(if(BuildConfig.IS_VEHICLE) "휴대폰에서 받기" else "차량으로 보내기") }
                 TextButton(enabled=!busy&&!loadFailed,onClick={runCatching { exporter.launch("changyeoga-trip.zip") }.onFailure { error="파일 저장 앱을 열 수 없습니다." }}) { Text("목록 내보내기") }
                 TextButton(enabled=!busy,onClick={importConfirm=true}) { Text("목록 가져오기") }
             }
-            TripAssistant(trip,allowed&&!busy&&!loadFailed,onSave={commit(it)},onArrive={ id ->
-                if(allowed&&!busy&&!loadFailed) { commit(trip.selectStop(id));delivery=true }
-            },onPrepare={delivery=false})
+            if(phone) {
+                Text("${step+1} / ${steps.size}  ·  ${steps[step]}",color=Mint,modifier=Modifier.padding(vertical=12.dp),fontSize=22.sp,fontWeight=FontWeight.Bold)
+                LinearProgressIndicator(progress={ (step+1)/5f },modifier=Modifier.fillMaxWidth())
+            }
+            TripAssistant(trip,allowed&&!busy&&!loadFailed,showControls=tools,onSave={commit(it)},onArrive={ id ->
+                if(allowed&&!busy&&!loadFailed) { commit(trip.selectStop(id));delivery=true;step=4 }
+            },onPrepare={delivery=false;step=2})
             if(BuildConfig.IS_DEMO) {
                 Row(verticalAlignment=Alignment.CenterVertically) {
                     Switch(checked=simulatedParked,onCheckedChange={simulatedParked=it},modifier=Modifier.testTag("parkingSwitch"))
@@ -205,7 +225,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                     }
                 } else {
                     Spacer(Modifier.height(14.dp))
-                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                    if(!phone) Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
                         FilterChip(selected=!delivery,onClick={delivery=false},label={Text("1  출발 준비")})
                         FilterChip(selected=delivery,onClick={delivery=true},label={Text("2  도착·전달")})
                         if(trip.example) Text("예시 방문지 · 직접 선택",Modifier.padding(12.dp),color=Soft)
@@ -214,16 +234,27 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                         trip.stops.forEach { stop ->
                             FilterChip(selected=stop.id==trip.selectedStopId,onClick={commit(trip.selectStop(stop.id))},label={Text(stop.name,fontSize=18.sp)})
                         }
-                        TextButton(onClick={addStop=true}) { Text("+ 방문지") }
+                        if(!phone || step==0) TextButton(onClick={addStop=true}) { Text("+ 방문지") }
                     }
                     val stop=trip.stops.firstOrNull { it.id==trip.selectedStopId } ?: trip.stops.first()
                     val items=trip.forStop(stop.id)
+                    if(phone && step==0) {
+                        Text("오늘 들를 곳을 추가해 주세요",fontSize=26.sp,modifier=Modifier.padding(vertical=20.dp))
+                        Text("방문지를 모두 추가했으면 다음으로 진행하세요. 위치는 나중에 등록해도 괜찮아요.",color=Soft)
+                        Spacer(Modifier.weight(1f))
+                    } else if(phone && step==3) {
+                        Text("준비한 짐을 차량으로 보내세요",fontSize=26.sp,modifier=Modifier.padding(vertical=20.dp))
+                        Text("방문지 ${trip.stops.size}곳 · 짐 ${trip.items.size}개\n휴대폰과 차량을 같은 Wi-Fi에 연결해 주세요.",color=Soft)
+                        Button(onClick={wireless=true},enabled=!busy,modifier=Modifier.padding(vertical=16.dp).heightIn(min=56.dp)) { Text("차량으로 보내기") }
+                        Text("휴대폰에서만 사용할 경우 다음으로 진행할 수 있어요.",color=Soft)
+                        Spacer(Modifier.weight(1f))
+                    } else {
                     Column(Modifier.fillMaxWidth().padding(vertical=12.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
                         Column {
                             Text(if(delivery) "${stop.name}에서 건넬 짐" else "${stop.name}에 가져갈 짐",fontSize=26.sp,fontWeight=FontWeight.Bold)
                             Text(if(delivery) "방문지 직접 선택 · 전달 ${items.count { it.state==ItemState.DELIVERED }}/${items.size}" else "적재 ${items.count { it.state!=ItemState.READY }}/${items.size} · 사진만 찍으면 아직 준비 중이에요",color=Soft)
                         }
-                        if(!delivery) Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                        if(!delivery && (!phone || step==1)) Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                             if(!BuildConfig.IS_VEHICLE) OutlinedButton(enabled=!busy,onClick={pendingStop=stop.id; runCatching { camera.launch(null) }.onFailure { pendingStop=null; error="카메라 앱이 없습니다. 사진 선택을 이용해 주세요." }}) { Text("촬영") }
                             Button(enabled=!busy,onClick={pendingStop=stop.id; runCatching { picker.launch("image/*") }.onFailure { pendingStop=null; error="사진 선택 앱을 열 수 없습니다." }}) { Text(if(busy) "저장 중" else "+ 사진 선택") }
                         }
@@ -231,23 +262,41 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                     LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(12.dp),contentPadding=PaddingValues(bottom=20.dp)) {
                         if(items.isEmpty()) item { Text("아직 등록한 짐이 없어요. 사진을 추가해 주세요.",Modifier.padding(24.dp),color=Soft) }
                         items(items,key={it.id}) { luggage ->
-                            ItemCard(luggage,store,delivery,!busy,onState={commit(trip.changeState(luggage.id,it))},onDelete={
+                            ItemCard(luggage,store,delivery,!busy,showActions=!phone||step!=1,onState={ state ->
+                                val next=trip.changeState(luggage.id,state)
+                                val following=if(phone && state==ItemState.DELIVERED && next.forStop(stop.id).all { it.state==ItemState.DELIVERED }) next.stops.firstOrNull { s -> next.forStop(s.id).any { it.state==ItemState.LOADED } } else null
+                                commit(if(following!=null) next.selectStop(following.id) else next)
+                            },onDelete={
                                 val next=trip.removeItem(luggage.id)
                                 commit(next)
                                 if(trip==next) store.deletePhoto(luggage.photo)
                             })
                         }
                     }
+                    }
+                    if(phone && step==1) Text("각 방문지에 사진을 한 장 이상 추가하면 다음으로 진행할 수 있어요.",color=Soft,fontSize=14.sp)
+                    if(phone && step==2) Text("모든 방문지의 짐을 실었다고 확인하면 다음으로 진행할 수 있어요.",color=Soft,fontSize=14.sp)
+                    if(phone) Row(Modifier.fillMaxWidth().padding(top=8.dp),horizontalArrangement=Arrangement.spacedBy(12.dp)) {
+                        if(step>0) OutlinedButton(onClick={step--;delivery=step==4},enabled=!busy,modifier=Modifier.heightIn(min=56.dp)) { Text("이전") }
+                        Button(onClick={
+                            if(step<4) { step++;delivery=step==4 } else reset=true
+                        },enabled=!busy && when(step) {
+                            1 -> trip.items.isNotEmpty() && trip.stops.all { trip.forStop(it.id).isNotEmpty() }
+                            2 -> trip.items.isNotEmpty() && trip.items.none { it.state==ItemState.READY }
+                            4 -> trip.items.isNotEmpty() && trip.items.all { it.state==ItemState.DELIVERED }
+                            else -> true
+                        },modifier=Modifier.weight(1f).heightIn(min=56.dp)) { Text(if(step==4) "외출 마치기" else "다음 · ${steps[step+1]}") }
+                    }
                 }
             }
         }
     }
     if(addStop && allowed) AlertDialog(onDismissRequest={addStop=false},title={Text("방문지 추가")},text={OutlinedTextField(value=stopName,onValueChange={stopName=it.take(30)},label={Text("예: 외가, 친구 집")},singleLine=true,modifier=Modifier.testTag("stopName"))},confirmButton={TextButton(enabled=stopName.isNotBlank(),onClick={commit(trip.addStop(stopName));stopName="";addStop=false}){Text("추가")}},dismissButton={TextButton(onClick={addStop=false}){Text("취소")}})
-    if(reset && allowed) AlertDialog(onDismissRequest={reset=false},title={Text("새 외출을 준비할까요?")},text={Text("현재 방문지, 짐과 사진이 이 기기에서 삭제됩니다.")},confirmButton={TextButton(enabled=!busy,onClick={val previous=trip; commit(Trip());if(trip==Trip()){previous.items.forEach{store.deletePhoto(it.photo)};loadFailed=false;delivery=false};reset=false}){Text("초기화")}},dismissButton={TextButton(onClick={reset=false}){Text("취소")}})
+    if(reset && allowed) AlertDialog(onDismissRequest={reset=false},title={Text("새 외출을 준비할까요?")},text={Text("현재 방문지, 짐과 사진이 이 기기에서 삭제됩니다.")},confirmButton={TextButton(enabled=!busy,onClick={val previous=trip; commit(Trip());if(trip==Trip()){previous.items.forEach{store.deletePhoto(it.photo)};loadFailed=false;delivery=false;step=0};reset=false}){Text("초기화")}},dismissButton={TextButton(onClick={reset=false}){Text("취소")}})
 }
 
 @Composable
-private fun ItemCard(item: Luggage,store: TripStore,delivery: Boolean,enabled: Boolean,onState: (ItemState)->Unit,onDelete: ()->Unit) {
+private fun ItemCard(item: Luggage,store: TripStore,delivery: Boolean,enabled: Boolean,showActions: Boolean=true,onState: (ItemState)->Unit,onDelete: ()->Unit) {
     val bitmap by produceState<android.graphics.Bitmap?>(null,item.photo) {
         value=withContext(Dispatchers.IO) { item.photo?.let { runCatching { BitmapFactory.decodeFile(store.photoFile(it).absolutePath) }.getOrNull() } }
     }
@@ -265,7 +314,7 @@ private fun ItemCard(item: Luggage,store: TripStore,delivery: Boolean,enabled: B
             }
           }
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End,verticalAlignment=Alignment.CenterVertically) {
-                if(!delivery && item.state==ItemState.READY) Button(enabled=enabled,onClick={onState(ItemState.LOADED)},modifier=Modifier.heightIn(min=56.dp)) { Text("실었어요") }
+                if(showActions && !delivery && item.state==ItemState.READY) Button(enabled=enabled,onClick={onState(ItemState.LOADED)},modifier=Modifier.heightIn(min=56.dp)) { Text("실었어요") }
                 if(delivery && item.state==ItemState.LOADED) Button(enabled=enabled,onClick={onState(ItemState.DELIVERED)},modifier=Modifier.heightIn(min=56.dp)) { Text("건넸어요") }
                 if(item.state!=ItemState.READY) TextButton(enabled=enabled,onClick={onState(if(item.state==ItemState.DELIVERED) ItemState.LOADED else ItemState.READY)}) { Text("되돌리기") }
                 if(!delivery && item.state==ItemState.READY) TextButton(enabled=enabled,onClick=onDelete) { Text("삭제") }

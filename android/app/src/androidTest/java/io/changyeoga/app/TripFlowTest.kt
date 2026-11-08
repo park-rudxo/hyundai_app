@@ -13,10 +13,28 @@ import org.junit.Test
 class TripFlowTest {
     @get:Rule val ui=createAndroidComposeRule<MainActivity>()
     @Before fun reset() {
+        ui.onNodeWithText("더보기").performClick()
         ui.onNodeWithText("새 외출").performClick()
         ui.onNodeWithText("초기화").performClick()
     }
+    @Test fun phoneFollowsStepsAndBlocksUnloadedDeparture() {
+        if(BuildConfig.IS_VEHICLE) return
+        ui.onNodeWithText("예시로 둘러보기").performClick()
+        ui.onNodeWithText("다음 · 짐 사진 등록").performClick()
+        ui.onNodeWithText("실었어요").assertDoesNotExist()
+        ui.onNodeWithText("다음 · 차에 싣기").performClick()
+        ui.onNodeWithText("다음 · 차량에 보내기").assertIsNotEnabled()
+        ui.onNodeWithText("실었어요").performClick()
+        ui.onNodeWithText("친가",useUnmergedTree=true).performClick()
+        ui.onNodeWithText("실었어요").performClick()
+        ui.onNodeWithText("다음 · 차량에 보내기").performClick()
+        ui.onNodeWithText("차량으로 보내기").assertIsDisplayed()
+        ui.onNodeWithText("다음 · 도착 후 전달").performClick()
+        ui.onNodeWithText("건넸어요").assertIsDisplayed()
+        ui.onNodeWithText("외출 마치기").assertIsNotEnabled()
+    }
     @Test fun prepareDeliverUndoAndRestart() {
+        if(!BuildConfig.IS_VEHICLE) return
         ui.onNodeWithText("예시로 둘러보기").performClick()
         ui.onNodeWithText("실었어요").performClick()
         ui.onNodeWithText("2  도착·전달").performClick()

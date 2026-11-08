@@ -28,7 +28,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import java.util.Locale
 
 @Composable
-fun TripAssistant(trip: Trip, allowed: Boolean, onSave: (Trip)->Unit, onArrive: (String)->Unit, onPrepare: ()->Unit) {
+fun TripAssistant(trip: Trip, allowed: Boolean, showControls: Boolean = true, onSave: (Trip)->Unit, onArrive: (String)->Unit, onPrepare: ()->Unit) {
     val context=LocalContext.current
     val owner=LocalLifecycleOwner.current
     val current by rememberUpdatedState(trip)
@@ -73,7 +73,10 @@ fun TripAssistant(trip: Trip, allowed: Boolean, onSave: (Trip)->Unit, onArrive: 
             override fun onLocationChanged(location: Location) {
                 if(configured!=current.stops) { configured=current.stops;detector=ArrivalDetector() }
                 val point=Position(location.latitude,location.longitude,if(location.hasAccuracy()) location.accuracy else Float.POSITIVE_INFINITY,location.elapsedRealtimeNanos/1000000)
+                val previous=fix
+                if(previous!=null && previous.usable(SystemClock.elapsedRealtime()) && point.accuracy>previous.accuracy) return
                 fix=point
+                message=if(point.usable(SystemClock.elapsedRealtime())) "현재 위치를 찾았습니다." else "대략적인 위치를 받았습니다. 정확도를 높이는 중입니다."
                 val stop=detector.update(current.stops,point,SystemClock.elapsedRealtime())
                 if(stop!=null) {
                     arrive(stop.id)
@@ -81,7 +84,7 @@ fun TripAssistant(trip: Trip, allowed: Boolean, onSave: (Trip)->Unit, onArrive: 
                 }
                 else if(!point.usable(SystemClock.elapsedRealtime())) message="위치 정확도가 낮습니다. 실외에서 기다리거나 방문지를 직접 선택해 주세요."
             }
-            override fun onProviderDisabled(provider: String) { fix=null;detector=ArrivalDetector();message="GPS가 꺼졌습니다. 휴대폰 위치 설정을 확인해 주세요." }
+            override fun onProviderDisabled(provider: String) { message="위치 제공 설정이 변경됐습니다. 위치 찾기를 다시 켜 주세요." }
             override fun onProviderEnabled(provider: String) { message="GPS 위치를 기다리는 중입니다." }
             @Deprecated("Legacy callback") override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
         }
@@ -90,8 +93,18 @@ fun TripAssistant(trip: Trip, allowed: Boolean, onSave: (Trip)->Unit, onArrive: 
             if(!gps || BuildConfig.IS_VEHICLE) return
             try {
                 if(context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED) { gps=false;message="정확한 위치 권한을 허용해 주세요.";return }
-                manager.requestLocationUpdates(LocationManager.GPS_PROVIDER,2000L,0f,listener,Looper.getMainLooper())
-                message=if(manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) "GPS 위치를 기다리는 중입니다." else "휴대폰에서 위치를 켜 주세요."
+                val providers=listOf(LocationManager.GPS_PROVIDER,LocationManager.NETWORK_PROVIDER).filter { manager.allProviders.contains(it) && manager.isProviderEnabled(it) }
+                if(providers.isEmpty()) { message="휴대폰 위치가 꺼져 있습니다. 위치 설정을 열어 켜 주세요.";return }
+                message="현재 위치를 찾고 있습니다. 실내에서는 Wi-Fi도 켜 주세요."
+                var requests=0
+                providers.forEach { provider ->
+                    runCatching {
+                        manager.requestLocationUpdates(provider,2000L,0f,listener,Looper.getMainLooper())
+                        requests++
+                        manager.getLastKnownLocation(provider)?.takeIf { SystemClock.elapsedRealtime()-it.elapsedRealtimeNanos/1000000 in 0..15000 }?.let { listener.onLocationChanged(it) }
+                    }
+                }
+                if(requests==0) { gps=false;message="위치를 요청하지 못했습니다. 앱의 정확한 위치 권한과 휴대폰 위치 설정을 확인해 주세요." }
             } catch(_:Exception) { gps=false;message="GPS를 사용할 수 없습니다. 직접 방문지를 선택해 주세요." }
         }
         val observer=LifecycleEventObserver { _,event ->
@@ -102,13 +115,20 @@ fun TripAssistant(trip: Trip, allowed: Boolean, onSave: (Trip)->Unit, onArrive: 
         if(owner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) start()
         onDispose { stop();owner.lifecycle.removeObserver(observer) }
     }
-    if(allowed) {
+    LaunchedEffect(gps,fix) {
+        if(gps && fix==null) {
+            kotlinx.coroutines.delay(30000)
+            message="아직 위치를 받지 못했습니다. 휴대폰 위치·정확한 위치 권한을 확인하거나 실외에서 다시 시도해 주세요. 위치 없이도 짐 등록을 계속할 수 있습니다."
+        }
+    }
+    if(allowed && showControls) {
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
             if(!BuildConfig.IS_VEHICLE) {
                 OutlinedButton(onClick={
                     if(gps) gps=false
                     else permission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION))
-                }) { Text(if(gps) "GPS 끄기" else "휴대폰 GPS 켜기") }
+                }) { Text(if(gps) "위치 찾기 중지" else "현재 위치 찾기") }
+                TextButton(onClick={context.startActivity(Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS))}) { Text("위치 설정") }
                 OutlinedButton(enabled=trip.stops.isNotEmpty(),onClick={
                     val stop=trip.stops.firstOrNull { it.id==trip.selectedStopId } ?: trip.stops.first()
                     editId=stop.id;lat=stop.latitude?.toString() ?: "";lon=stop.longitude?.toString() ?: "";editError="";editor=true
@@ -121,7 +141,7 @@ fun TripAssistant(trip: Trip, allowed: Boolean, onSave: (Trip)->Unit, onArrive: 
             }) { Text("음성 명령") }
             TextButton(onClick={say(luggageSummary(current,current.selectedStopId ?: ""))}) { Text("짐 읽기") }
         }
-        if(gps && !BuildConfig.IS_VEHICLE) Text("GPS 시험 · 이 화면이 켜져 있을 때만 감지 · 차량에 실시간 중계하지 않음",style=MaterialTheme.typography.bodySmall)
+        fix?.let { Text("현재 위치: %.5f, %.5f · 오차 약 %.0fm".format(it.latitude,it.longitude,it.accuracy),style=MaterialTheme.typography.bodySmall) }
         if(message.isNotBlank()) Text(message,style=MaterialTheme.typography.bodySmall)
         if(!speechReady) Text("한국어 음성 출력 준비 전 · 안내는 글로도 표시됩니다.",style=MaterialTheme.typography.bodySmall)
     }
@@ -130,7 +150,7 @@ fun TripAssistant(trip: Trip, allowed: Boolean, onSave: (Trip)->Unit, onArrive: 
             Text("목적지의 위도·경도를 입력하거나, 지금 그 장소에 있다면 현재 GPS를 저장하세요. 집에서 현재 위치를 누르면 목적지가 집으로 설정됩니다.")
             OutlinedTextField(value=lat,onValueChange={lat=it.take(25)},label={Text("위도 (-90~90)")},singleLine=true)
             OutlinedTextField(value=lon,onValueChange={lon=it.take(25)},label={Text("경도 (-180~180)")},singleLine=true)
-            TextButton(onClick={val point=fix;if(point!=null&&point.usable(SystemClock.elapsedRealtime())){lat=point.latitude.toString();lon=point.longitude.toString();editError=""}else editError="먼저 GPS를 켜고 정확한 위치를 기다려 주세요."}) { Text("현재 GPS 사용") }
+            TextButton(onClick={val point=fix;if(point!=null&&point.usable(SystemClock.elapsedRealtime())){lat=point.latitude.toString();lon=point.longitude.toString();editError=""}else editError="위치를 아직 받지 못했거나 오차가 50m를 넘습니다. 위치 찾기를 켠 뒤 실외에서 다시 시도해 주세요."}) { Text("현재 GPS 사용") }
             Text("등록한 좌표는 사진·목록과 함께 전송됩니다. 위치 기록은 저장하지 않습니다.")
             if(editError.isNotBlank()) Text(editError,color=MaterialTheme.colorScheme.error)
         }
