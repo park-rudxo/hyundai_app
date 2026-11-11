@@ -16,6 +16,8 @@ import org.junit.Test
 class MapScreenTest {
     @Test fun configuredPhoneOpensMapSearchInsteadOfWaitingScreen() {
         if(BuildConfig.IS_VEHICLE) return
+        // map-sdk compiles without this optional dependency but crashes on location setup.
+        assertNotNull(Class.forName("com.google.android.gms.location.LocationServices"))
         val context=ApplicationProvider.getApplicationContext<Context>()
         @Suppress("DEPRECATION")
         val key=context.packageManager.getApplicationInfo(context.packageName,PackageManager.GET_META_DATA)

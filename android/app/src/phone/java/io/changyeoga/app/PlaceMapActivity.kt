@@ -65,7 +65,7 @@ class PlaceMapActivity : FragmentActivity() {
                 if(!isFinishing && !isDestroyed) {
                     authFailed=true
                     selected=null
-                    confirm.isEnabled=false
+                    if(::confirm.isInitialized) confirm.isEnabled=false
                     status.text="지도 인증에 실패했습니다. Client ID, Dynamic Map 활성화와 등록한 Android 패키지를 확인해 주세요."
                 }
             }

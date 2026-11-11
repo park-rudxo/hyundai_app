@@ -22,8 +22,8 @@ android {
         applicationId = "io.changyeoga.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "0.6.0"
+        versionCode = 8
+        versionName = "0.6.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["naverMapKey"] = naverMapKey
         buildConfigField("boolean", "HAS_NAVER_MAP_KEY", naverMapKey.isNotEmpty().toString())
@@ -42,6 +42,8 @@ android {
 dependencies {
     add("vehicleImplementation", "ai.pleos.playground:NaviHelper:3.0.5")
     add("phoneImplementation", "com.naver.maps:map-sdk:3.24.0")
+    // FusedLocationSource references Play Services at runtime; map-sdk does not bundle it.
+    add("phoneImplementation", "com.google.android.gms:play-services-location:21.0.1")
     add("phoneImplementation", "androidx.fragment:fragment-ktx:1.8.6")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

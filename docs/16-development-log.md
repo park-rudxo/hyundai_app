@@ -1,5 +1,11 @@
 # 챙겨가 개발 기록
 
+## 2026년 11월 11일 · 휴대폰 0.6.1 지도 진입 종료 수정
+
+지도 진입 시 종료된다는 사용자 보고 후 FusedLocationSource의 선택적 런타임 의존성인 play-services-location이 빠진 것을 확인했다. SDK POM에는 포함되지 않으며 공식 가이드는 앱에서 별도 추가하도록 명시한다. 이전 0.6.0 APK의 DEX 클래스 정의에서도 LocationServices와 FusedLocationProviderClient가 모두 없었다. phoneImplementation에 공식 가이드의 21.0.1을 추가하고 버전을 0.6.1/versionCode 8로 올렸다. 인증 실패 콜백이 UI 초기화보다 먼저 오는 경우에도 confirm 미초기화 예외가 나지 않도록 처리했다.
+
+지도 계측 테스트는 LocationServices 클래스 존재를 확인하도록 보강했다. 최종 APK의 DEX 클래스 정의에 위치 라이브러리가 포함됐는지 검사한다. 사용자 기기의 Logcat은 없어 보고된 종료의 스택 트레이스는 확인하지 못했고, 실기기 실행 검증은 남아 있다. 차량·시연 APK는 0.6.0을 유지한다.
+
 ## 2026년 11월 11일 · 0.6.0 지도 우선 흐름과 화면 정리
 
 사용자 스크린샷에서 지도 설정 대기 화면과 상단 시스템 바 겹침을 확인했다. 이전 APK의 BuildConfig 조건이 왜 사용자 기기에서 계속 참조됐는지는 재현하지 못했으며, 단순 캐시 문제로 확정하지 않는다. 지도 화면은 해당 플래그 의존을 제거하고 APK manifest 인증 정보로 초기화한다. 메인 화면은 edge-to-edge와 Compose 시스템 바 패딩을 명시하고 지도 화면에는 systemBars/IME inset을 적용했다.
