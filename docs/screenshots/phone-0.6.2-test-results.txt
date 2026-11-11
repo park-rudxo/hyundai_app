@@ -1,0 +1,9 @@
+
+io.changyeoga.app.MapScreenTest:.
+io.changyeoga.app.TripFlowTest:......
+
+Time: 75.91
+
+OK (7 tests)
+
+

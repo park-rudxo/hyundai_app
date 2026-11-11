@@ -3,6 +3,7 @@ package io.changyeoga.app
 import android.os.Bundle
 import android.graphics.BitmapFactory
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.SystemBarStyle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -46,7 +47,10 @@ class MainActivity: ComponentActivity() {
     private var signal by mutableStateOf("차량 상태 확인 중")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle=SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            navigationBarStyle=SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+        )
         setContent {
             MaterialTheme(colorScheme = darkColorScheme(primary=Mint,background=Ink,surface=Panel,onSurface=Color.White,onPrimary=Ink)) {
                 val density=LocalDensity.current
@@ -72,6 +76,8 @@ class MainActivity: ComponentActivity() {
 @Composable
 private fun App(vehicleAllowed: Boolean, signal: String) {
     val context=LocalContext.current
+    @Suppress("DEPRECATION")
+    val installedVersion=remember { context.packageManager.getPackageInfo(context.packageName,0).versionName.orEmpty() }
     val compact=LocalConfiguration.current.screenWidthDp < 600
     val store=remember { TripStore(context) }
     val loaded=remember { runCatching { store.load() } }
@@ -212,7 +218,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                     }
                 }
             }
-            Text(when { BuildConfig.IS_DEMO -> "시연 전용 · 주차와 도착을 직접 선택합니다"; BuildConfig.IS_VEHICLE -> signal; else -> "지도에서 방문지를 찾고, 가져갈 짐을 준비해요 · ${BuildConfig.VERSION_NAME}" },color=Soft,fontSize=14.sp)
+            Text(when { BuildConfig.IS_DEMO -> "시연 전용 · 주차와 도착을 직접 선택합니다"; BuildConfig.IS_VEHICLE -> signal; else -> "지도에서 방문지를 찾고, 가져갈 짐을 준비해요 · ${installedVersion}" },color=Soft,fontSize=14.sp)
             if(allowed && BuildConfig.IS_VEHICLE) Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                 Button(enabled=!busy&&!loadFailed,onClick={wireless=true}) { Text(if(BuildConfig.IS_VEHICLE) "휴대폰에서 받기" else "차량으로 보내기") }
                 TextButton(enabled=!busy&&!loadFailed,onClick={runCatching { exporter.launch("changyeoga-trip.zip") }.onFailure { error="파일 저장 앱을 열 수 없습니다." }}) { Text("목록 내보내기") }
@@ -350,7 +356,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
             OutlinedButton(onClick={tools=false;runCatching{exporter.launch("changyeoga-trip.zip")}.onFailure{error="파일 저장 앱을 열 수 없습니다."}},enabled=!loadFailed,modifier=Modifier.fillMaxWidth()) { Text("목록 내보내기") }
             OutlinedButton(onClick={tools=false;importConfirm=true},modifier=Modifier.fillMaxWidth()) { Text("목록 가져오기") }
             TextButton(onClick={tools=false;reset=true},modifier=Modifier.fillMaxWidth()) { Text("새 외출") }
-            Text("설치 버전 ${BuildConfig.VERSION_NAME}",color=Soft)
+            Text("설치 버전 ${installedVersion}",color=Soft)
         }
     },confirmButton={TextButton(onClick={tools=false}){Text("닫기")}})
     if(addStop && allowed) AlertDialog(onDismissRequest={addStop=false},title={Text("방문지 추가")},text={OutlinedTextField(value=stopName,onValueChange={stopName=it.take(30)},label={Text("예: 외가, 친구 집")},singleLine=true,modifier=Modifier.testTag("stopName"))},confirmButton={TextButton(enabled=stopName.isNotBlank(),onClick={commit(trip.addStop(stopName));stopName="";addStop=false}){Text("추가")}},dismissButton={TextButton(onClick={addStop=false}){Text("취소")}})

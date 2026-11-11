@@ -35,6 +35,10 @@ class TripFlowTest {
     }
     @Test fun phoneCanReachAllStagesAndVoiceWithoutOverflowMenu() {
         if(BuildConfig.IS_VEHICLE) return
+        val context=ApplicationProvider.getApplicationContext<Context>()
+        @Suppress("DEPRECATION")
+        val version=context.packageManager.getPackageInfo(context.packageName,0).versionName.orEmpty()
+        ui.onNodeWithText("지도에서 방문지를 찾고, 가져갈 짐을 준비해요 · $version").assertIsDisplayed()
         ui.onNodeWithText("예시로 둘러보기").performClick()
         ui.onNodeWithText("4 차량에 보내기").performClick()
         ui.onNodeWithText("차량으로 보내기").assertIsDisplayed()
