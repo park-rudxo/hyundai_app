@@ -13,7 +13,7 @@ import org.junit.Test
 class TripFlowTest {
     @get:Rule val ui=createAndroidComposeRule<MainActivity>()
     @Before fun reset() {
-        ui.onNodeWithText("더보기").performClick()
+        ui.onNodeWithText(if(BuildConfig.IS_VEHICLE) "더보기" else "파일·새 외출").performClick()
         ui.onNodeWithText("새 외출").performClick()
         ui.onNodeWithText("초기화").performClick()
     }
@@ -32,6 +32,17 @@ class TripFlowTest {
         ui.onNodeWithText("다음 · 도착 후 전달").performClick()
         ui.onNodeWithText("건넸어요").assertIsDisplayed()
         ui.onNodeWithText("외출 마치기").assertIsNotEnabled()
+    }
+    @Test fun phoneCanReachAllStagesAndVoiceWithoutOverflowMenu() {
+        if(BuildConfig.IS_VEHICLE) return
+        ui.onNodeWithText("예시로 둘러보기").performClick()
+        ui.onNodeWithText("4 차량에 보내기").performClick()
+        ui.onNodeWithText("차량으로 보내기").assertIsDisplayed()
+        ui.onNodeWithText("1 방문지 정하기").performClick()
+        ui.onNodeWithText("+ 지도에서 방문지 찾기").assertIsDisplayed()
+        ui.onNodeWithText("음성·도착 안내").performClick()
+        ui.onNodeWithText("음성 명령").assertIsDisplayed()
+        ui.onNodeWithText("방문지 위치").assertDoesNotExist()
     }
     @Test fun prepareDeliverUndoAndRestart() {
         if(!BuildConfig.IS_VEHICLE) return

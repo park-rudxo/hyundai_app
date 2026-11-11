@@ -27,6 +27,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import java.util.Locale
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TripAssistant(trip: Trip, allowed: Boolean, showControls: Boolean = true, onSave: (Trip)->Unit, onArrive: (String)->Unit, onPrepare: ()->Unit) {
     val context=LocalContext.current
@@ -36,11 +37,6 @@ fun TripAssistant(trip: Trip, allowed: Boolean, showControls: Boolean = true, on
     var message by remember { mutableStateOf("") }
     var gps by remember { mutableStateOf(false) }
     var fix by remember { mutableStateOf<Position?>(null) }
-    var editor by remember { mutableStateOf(false) }
-    var lat by remember { mutableStateOf("") }
-    var lon by remember { mutableStateOf("") }
-    var editId by remember { mutableStateOf<String?>(null) }
-    var editError by remember { mutableStateOf("") }
     var recognized by remember { mutableStateOf<String?>(null) }
     var tts by remember { mutableStateOf<TextToSpeech?>(null) }
     var speechReady by remember { mutableStateOf(false) }
@@ -122,17 +118,14 @@ fun TripAssistant(trip: Trip, allowed: Boolean, showControls: Boolean = true, on
         }
     }
     if(allowed && showControls) {
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+        FlowRow(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
             if(!BuildConfig.IS_VEHICLE) {
                 OutlinedButton(onClick={
                     if(gps) gps=false
                     else permission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION))
                 }) { Text(if(gps) "위치 찾기 중지" else "현재 위치 찾기") }
                 TextButton(onClick={context.startActivity(Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS))}) { Text("위치 설정") }
-                OutlinedButton(enabled=trip.stops.isNotEmpty(),onClick={
-                    val stop=trip.stops.firstOrNull { it.id==trip.selectedStopId } ?: trip.stops.first()
-                    editId=stop.id;lat=stop.latitude?.toString() ?: "";lon=stop.longitude?.toString() ?: "";editError="";editor=true
-                }) { Text("방문지 위치") }
+
             }
             OutlinedButton(onClick={
                 tts?.stop()
@@ -141,24 +134,10 @@ fun TripAssistant(trip: Trip, allowed: Boolean, showControls: Boolean = true, on
             }) { Text("음성 명령") }
             TextButton(onClick={say(luggageSummary(current,current.selectedStopId ?: ""))}) { Text("짐 읽기") }
         }
-        fix?.let { Text("현재 위치: %.5f, %.5f · 오차 약 %.0fm".format(it.latitude,it.longitude,it.accuracy),style=MaterialTheme.typography.bodySmall) }
+        fix?.let { Text("현재 위치를 확인했어요 · 오차 약 %.0fm".format(it.accuracy),style=MaterialTheme.typography.bodySmall) }
         if(message.isNotBlank()) Text(message,style=MaterialTheme.typography.bodySmall)
         if(!speechReady) Text("한국어 음성 출력 준비 전 · 안내는 글로도 표시됩니다.",style=MaterialTheme.typography.bodySmall)
     }
-    if(editor && allowed) AlertDialog(onDismissRequest={editor=false},title={Text("${trip.stops.firstOrNull { it.id==editId }?.name ?: "방문지"} 위치")},text={
-        Column(verticalArrangement=Arrangement.spacedBy(8.dp)) {
-            Text("목적지의 위도·경도를 입력하거나, 지금 그 장소에 있다면 현재 GPS를 저장하세요. 집에서 현재 위치를 누르면 목적지가 집으로 설정됩니다.")
-            OutlinedTextField(value=lat,onValueChange={lat=it.take(25)},label={Text("위도 (-90~90)")},singleLine=true)
-            OutlinedTextField(value=lon,onValueChange={lon=it.take(25)},label={Text("경도 (-180~180)")},singleLine=true)
-            TextButton(onClick={val point=fix;if(point!=null&&point.usable(SystemClock.elapsedRealtime())){lat=point.latitude.toString();lon=point.longitude.toString();editError=""}else editError="위치를 아직 받지 못했거나 오차가 50m를 넘습니다. 위치 찾기를 켠 뒤 실외에서 다시 시도해 주세요."}) { Text("현재 GPS 사용") }
-            Text("등록한 좌표는 사진·목록과 함께 전송됩니다. 위치 기록은 저장하지 않습니다.")
-            if(editError.isNotBlank()) Text(editError,color=MaterialTheme.colorScheme.error)
-        }
-    },confirmButton={TextButton(onClick={
-        val stop=runCatching { Stop(id=editId ?: "",name=trip.stops.first { it.id==editId }.name,latitude=lat.toDouble(),longitude=lon.toDouble()) }.getOrNull()
-        if(stop==null) editError="올바른 위도·경도를 입력해 주세요."
-        else { onSave(trip.copy(stops=trip.stops.map { if(it.id==editId) stop else it }));editor=false }
-    }){Text("위치 저장")}},dismissButton={TextButton(onClick={editor=false}){Text("취소")}})
     if(recognized!=null && allowed) AlertDialog(onDismissRequest={recognized=null},title={Text("이 명령을 실행할까요?")},text={Text(recognized!!)},confirmButton={TextButton(onClick={
         when(val action=parseVoice(recognized!!,current.stops)) {
             VoiceAction.Read -> say(luggageSummary(current,current.selectedStopId ?: ""))

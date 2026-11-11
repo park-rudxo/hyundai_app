@@ -2,6 +2,7 @@ package io.changyeoga.app
 
 import android.os.Bundle
 import android.graphics.BitmapFactory
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -45,6 +46,7 @@ class MainActivity: ComponentActivity() {
     private var signal by mutableStateOf("차량 상태 확인 중")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContent {
             MaterialTheme(colorScheme = darkColorScheme(primary=Mint,background=Ink,surface=Panel,onSurface=Color.White,onPrimary=Ink)) {
                 val density=LocalDensity.current
@@ -66,6 +68,7 @@ class MainActivity: ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun App(vehicleAllowed: Boolean, signal: String) {
     val context=LocalContext.current
@@ -82,6 +85,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
     LaunchedEffect(step) { if(!BuildConfig.IS_VEHICLE) delivery=step==4 }
     var more by remember { mutableStateOf(false) }
     var tools by remember { mutableStateOf(false) }
+    var assistantPanel by rememberSaveable { mutableStateOf(false) }
     val phone = !BuildConfig.IS_VEHICLE
     val steps = listOf("방문지 정하기", "짐 사진 등록", "차에 싣기", "차량에 보내기", "도착 후 전달")
     var simulatedParked by rememberSaveable { mutableStateOf(true) }
@@ -90,6 +94,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
     var reset by rememberSaveable { mutableStateOf(false) }
     var pendingStop by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingMapStop by rememberSaveable { mutableStateOf<String?>(null) }
+    var mapCreating by rememberSaveable { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var importConfirm by remember { mutableStateOf(false) }
     var wireless by remember { mutableStateOf(false) }
@@ -128,13 +133,25 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
     val placeMap=rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val id=pendingMapStop
         pendingMapStop=null
-        if(result.resultCode==android.app.Activity.RESULT_OK && id!=null) {
+        if(result.resultCode==android.app.Activity.RESULT_OK && (id!=null || mapCreating)) {
             val lat=result.data?.getDoubleExtra("latitude",Double.NaN) ?: Double.NaN
             val lon=result.data?.getDoubleExtra("longitude",Double.NaN) ?: Double.NaN
             if(lat.isFinite() && lon.isFinite() && lat in -90.0..90.0 && lon in -180.0..180.0) {
-                commit(trip.copy(stops=trip.stops.map { if(it.id==id) it.copy(latitude=lat,longitude=lon) else it }))
+                val name=result.data?.getStringExtra("name")?.trim().orEmpty().ifBlank { "선택한 장소" }.take(30)
+                if(mapCreating) {
+                    val stop=Stop(name=name,latitude=lat,longitude=lon)
+                    commit(trip.copy(stops=trip.stops+stop,selectedStopId=stop.id))
+                } else commit(trip.copy(stops=trip.stops.map { if(it.id==id) it.copy(name=name,latitude=lat,longitude=lon) else it }))
             } else error="선택한 위치를 읽지 못했습니다. 다시 선택해 주세요."
         }
+    }
+    fun openMap(stop:Stop?=null) {
+        mapCreating=stop==null
+        pendingMapStop=stop?.id
+        val intent=android.content.Intent().setClassName(context,"io.changyeoga.app.PlaceMapActivity")
+        stop?.latitude?.let { intent.putExtra("latitude",it) }
+        stop?.longitude?.let { intent.putExtra("longitude",it) }
+        runCatching { placeMap.launch(intent) }.onFailure { pendingMapStop=null;mapCreating=false;error="지도 화면을 열지 못했습니다." }
     }
     val exporter=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
         if(uri!=null) {
@@ -181,12 +198,12 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal=if(compact) 16.dp else 28.dp,vertical=16.dp)) {
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically) {
                 Row(verticalAlignment=Alignment.CenterVertically) {
-                    Text("챙겨가",fontSize=30.sp,fontWeight=FontWeight.Bold,color=Mint)
-                    Spacer(Modifier.width(18.dp))
-                    Text(if(BuildConfig.IS_VEHICLE) "오늘의 방문" else "외출 준비",color=Soft,fontSize=18.sp)
+                    Text("챙겨가",fontSize=26.sp,fontWeight=FontWeight.Bold,color=Mint)
+                    Spacer(Modifier.width(10.dp))
+                    Text(if(BuildConfig.IS_VEHICLE) "오늘의 방문" else "외출 준비",color=Soft,fontSize=16.sp)
                 }
                 Box {
-                    TextButton(onClick={more=true},enabled=allowed&&!busy) { Text("더보기") }
+                    TextButton(onClick={if(phone) tools=true else more=true},enabled=allowed&&!busy) { Text(if(phone) "파일·새 외출" else "더보기") }
                     DropdownMenu(expanded=more,onDismissRequest={more=false}) {
                         DropdownMenuItem(text={Text("새 외출")},onClick={more=false;reset=true})
                         DropdownMenuItem(text={Text("위치·음성 도구")},onClick={more=false;tools=!tools})
@@ -195,7 +212,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                     }
                 }
             }
-            Text(when { BuildConfig.IS_DEMO -> "시연 전용 · 주차와 도착을 직접 선택합니다"; BuildConfig.IS_VEHICLE -> signal; else -> "사진으로 준비하고 · 같은 Wi-Fi에서 차량으로 전송" },color=Soft,fontSize=14.sp)
+            Text(when { BuildConfig.IS_DEMO -> "시연 전용 · 주차와 도착을 직접 선택합니다"; BuildConfig.IS_VEHICLE -> signal; else -> "지도에서 방문지를 찾고, 가져갈 짐을 준비해요 · ${BuildConfig.VERSION_NAME}" },color=Soft,fontSize=14.sp)
             if(allowed && BuildConfig.IS_VEHICLE) Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                 Button(enabled=!busy&&!loadFailed,onClick={wireless=true}) { Text(if(BuildConfig.IS_VEHICLE) "휴대폰에서 받기" else "차량으로 보내기") }
                 TextButton(enabled=!busy&&!loadFailed,onClick={runCatching { exporter.launch("changyeoga-trip.zip") }.onFailure { error="파일 저장 앱을 열 수 없습니다." }}) { Text("목록 내보내기") }
@@ -205,7 +222,18 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                 Text("${step+1} / ${steps.size}  ·  ${steps[step]}",color=Mint,modifier=Modifier.padding(vertical=12.dp),fontSize=22.sp,fontWeight=FontWeight.Bold)
                 LinearProgressIndicator(progress={ (step+1)/5f },modifier=Modifier.fillMaxWidth())
             }
-            TripAssistant(trip,allowed&&!busy&&!loadFailed,showControls=tools,onSave={commit(it)},onArrive={ id ->
+            if(phone && trip.stops.isNotEmpty()) {
+                FlowRow(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)) {
+                    steps.forEachIndexed { target,label ->
+                        FilterChip(selected=step==target,onClick={step=target;delivery=target==4},enabled=!busy,label={Text("${target+1} ${label}",fontSize=12.sp)})
+                    }
+                }
+            }
+            if(phone) Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick={openMap()},enabled=allowed&&!busy) { Text("+ 지도에서 찾기") }
+                TextButton(onClick={assistantPanel=!assistantPanel},enabled=allowed&&!busy) { Text(if(assistantPanel) "음성·도착 안내 닫기" else "음성·도착 안내") }
+            }
+            TripAssistant(trip,allowed&&!busy&&!loadFailed,showControls=if(phone) assistantPanel else tools,onSave={commit(it)},onArrive={ id ->
                 if(allowed&&!busy&&!loadFailed) { commit(trip.selectStop(id));delivery=true;step=4 }
             },onPrepare={delivery=false;step=2})
             if(BuildConfig.IS_DEMO) {
@@ -231,7 +259,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                         Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(16.dp)) {
                             Text("오늘 어디에 들르나요?",fontSize=32.sp,fontWeight=FontWeight.Bold)
                             Text("방문지를 정하고, 그곳에 가져갈 짐을 사진으로 담아요.",color=Soft)
-                            Button(onClick={addStop=true},modifier=Modifier.heightIn(min=56.dp)) { Text("첫 방문지 추가",fontSize=18.sp) }
+                            Button(onClick={if(phone) openMap() else addStop=true},modifier=Modifier.heightIn(min=56.dp)) { Text(if(phone) "지도에서 첫 방문지 찾기" else "첫 방문지 추가",fontSize=18.sp) }
                             OutlinedButton(onClick={commit(Trip.example())}) { Text("예시로 둘러보기") }
                         }
                     }
@@ -242,27 +270,29 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                         FilterChip(selected=delivery,onClick={delivery=true},label={Text("2  도착·전달")})
                         if(trip.example) Text("예시 방문지 · 직접 선택",Modifier.padding(12.dp),color=Soft)
                     }
-                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+                    if(!phone || step!=0) FlowRow(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
                         trip.stops.forEach { stop ->
                             FilterChip(selected=stop.id==trip.selectedStopId,onClick={commit(trip.selectStop(stop.id))},label={Text(stop.name,fontSize=18.sp)})
                         }
-                        if(!phone || step==0) TextButton(onClick={addStop=true}) { Text("+ 방문지") }
+                        if(!phone || step==0) TextButton(onClick={if(phone) openMap() else addStop=true}) { Text("+ 방문지") }
                     }
                     val stop=trip.stops.firstOrNull { it.id==trip.selectedStopId } ?: trip.stops.first()
                     val items=trip.forStop(stop.id)
                     VehicleMapActions(stop,allowed&&!busy)
                     if(phone && step==0) {
-                        Text("오늘 들를 곳을 추가해 주세요",fontSize=26.sp,modifier=Modifier.padding(vertical=20.dp))
-                        Text("방문지를 모두 추가했으면 다음으로 진행하세요. 위치는 나중에 등록해도 괜찮아요.",color=Soft)
-                        Button(onClick={
-                            pendingMapStop=stop.id
-                            val intent=android.content.Intent().setClassName(context,"io.changyeoga.app.PlaceMapActivity")
-                            stop.latitude?.let { intent.putExtra("latitude",it) }
-                            stop.longitude?.let { intent.putExtra("longitude",it) }
-                            runCatching { placeMap.launch(intent) }.onFailure { pendingMapStop=null;error="지도 화면을 열지 못했습니다." }
-                        },enabled=!busy,modifier=Modifier.padding(top=16.dp).heightIn(min=56.dp)) { Text("${stop.name} · 지도에서 위치 선택") }
-                        Text(if(stop.latitude==null) "위치 미등록 · 사진 등록은 계속할 수 있어요" else "방문지 위치 저장됨",color=Soft)
-                        Spacer(Modifier.weight(1f))
+                        LazyColumn(Modifier.weight(1f).fillMaxWidth(),verticalArrangement=Arrangement.spacedBy(12.dp),contentPadding=PaddingValues(vertical=16.dp)) {
+                            item { Text("오늘 들를 곳",fontSize=26.sp,fontWeight=FontWeight.Bold) }
+                            items(trip.stops,key={it.id}) { destination ->
+                                Card(Modifier.fillMaxWidth()) {
+                                    Column(Modifier.padding(16.dp)) {
+                                        Text(destination.name,fontSize=20.sp,fontWeight=FontWeight.Bold)
+                                        Text(if(destination.latitude==null) "위치를 지정해 주세요" else "지도에 위치 저장됨",color=Soft)
+                                        TextButton(onClick={openMap(destination)}) { Text("지도에서 위치 변경") }
+                                    }
+                                }
+                            }
+                            item { Button(onClick={openMap()},enabled=!busy,modifier=Modifier.fillMaxWidth().heightIn(min=56.dp)) { Text("+ 지도에서 방문지 찾기") } }
+                        }
                     } else if(phone && step==3) {
                         Text("준비한 짐을 차량으로 보내세요",fontSize=26.sp,modifier=Modifier.padding(vertical=20.dp))
                         Text("방문지 ${trip.stops.size}곳 · 짐 ${trip.items.size}개\n휴대폰과 차량을 같은 Wi-Fi에 연결해 주세요.",color=Soft)
@@ -312,6 +342,17 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
             }
         }
     }
+    if(phone && tools && allowed) AlertDialog(onDismissRequest={tools=false},title={Text("사용할 기능")},text={
+        Column(verticalArrangement=Arrangement.spacedBy(8.dp)) {
+            Text("지도 · 사진 · 적재 · 전송 · 전달은 화면 위 단계에서 바로 이동할 수 있어요.")
+            OutlinedButton(onClick={tools=false;openMap()},modifier=Modifier.fillMaxWidth()) { Text("지도에서 방문지 추가") }
+            OutlinedButton(onClick={tools=false;wireless=true},enabled=trip.items.isNotEmpty(),modifier=Modifier.fillMaxWidth()) { Text("차량으로 보내기") }
+            OutlinedButton(onClick={tools=false;runCatching{exporter.launch("changyeoga-trip.zip")}.onFailure{error="파일 저장 앱을 열 수 없습니다."}},enabled=!loadFailed,modifier=Modifier.fillMaxWidth()) { Text("목록 내보내기") }
+            OutlinedButton(onClick={tools=false;importConfirm=true},modifier=Modifier.fillMaxWidth()) { Text("목록 가져오기") }
+            TextButton(onClick={tools=false;reset=true},modifier=Modifier.fillMaxWidth()) { Text("새 외출") }
+            Text("설치 버전 ${BuildConfig.VERSION_NAME}",color=Soft)
+        }
+    },confirmButton={TextButton(onClick={tools=false}){Text("닫기")}})
     if(addStop && allowed) AlertDialog(onDismissRequest={addStop=false},title={Text("방문지 추가")},text={OutlinedTextField(value=stopName,onValueChange={stopName=it.take(30)},label={Text("예: 외가, 친구 집")},singleLine=true,modifier=Modifier.testTag("stopName"))},confirmButton={TextButton(enabled=stopName.isNotBlank(),onClick={commit(trip.addStop(stopName));stopName="";addStop=false}){Text("추가")}},dismissButton={TextButton(onClick={addStop=false}){Text("취소")}})
     if(reset && allowed) AlertDialog(onDismissRequest={reset=false},title={Text("새 외출을 준비할까요?")},text={Text("현재 방문지, 짐과 사진이 이 기기에서 삭제됩니다.")},confirmButton={TextButton(enabled=!busy,onClick={val previous=trip; commit(Trip());if(trip==Trip()){previous.items.forEach{store.deletePhoto(it.photo)};loadFailed=false;delivery=false;step=0};reset=false}){Text("초기화")}},dismissButton={TextButton(onClick={reset=false}){Text("취소")}})
 }
