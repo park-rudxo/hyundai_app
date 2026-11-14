@@ -6,3 +6,6 @@
 *.keystore
 captures/
 .DS_Store
+
+server/secrets.local.json
+server/__pycache__/

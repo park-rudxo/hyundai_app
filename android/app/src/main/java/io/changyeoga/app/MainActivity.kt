@@ -155,6 +155,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
         mapCreating=stop==null
         pendingMapStop=stop?.id
         val intent=android.content.Intent().setClassName(context,"io.changyeoga.app.PlaceMapActivity")
+        stop?.let { intent.putExtra("name",it.name) }
         stop?.latitude?.let { intent.putExtra("latitude",it) }
         stop?.longitude?.let { intent.putExtra("longitude",it) }
         runCatching { placeMap.launch(intent) }.onFailure { pendingMapStop=null;mapCreating=false;error="지도 화면을 열지 못했습니다." }
@@ -228,17 +229,8 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                 Text("${step+1} / ${steps.size}  ·  ${steps[step]}",color=Mint,modifier=Modifier.padding(vertical=12.dp),fontSize=22.sp,fontWeight=FontWeight.Bold)
                 LinearProgressIndicator(progress={ (step+1)/5f },modifier=Modifier.fillMaxWidth())
             }
-            if(phone && trip.stops.isNotEmpty()) {
-                FlowRow(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)) {
-                    steps.forEachIndexed { target,label ->
-                        FilterChip(selected=step==target,onClick={step=target;delivery=target==4},enabled=!busy,label={Text("${target+1} ${label}",fontSize=12.sp)})
-                    }
-                }
-            }
-            if(phone) Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick={openMap()},enabled=allowed&&!busy) { Text("+ 지도에서 찾기") }
-                TextButton(onClick={assistantPanel=!assistantPanel},enabled=allowed&&!busy) { Text(if(assistantPanel) "음성·도착 안내 닫기" else "음성·도착 안내") }
-            }
+            if(phone && step==0) Text("장소를 찾고, 그곳에 가져갈 짐을 등록해요.",color=Soft,modifier=Modifier.padding(vertical=8.dp))
+            if(phone && step==4) TextButton(onClick={assistantPanel=!assistantPanel}) { Text(if(assistantPanel) "안내 닫기" else "음성·도착 안내") }
             TripAssistant(trip,allowed&&!busy&&!loadFailed,showControls=if(phone) assistantPanel else tools,onSave={commit(it)},onArrive={ id ->
                 if(allowed&&!busy&&!loadFailed) { commit(trip.selectStop(id));delivery=true;step=4 }
             },onPrepare={delivery=false;step=2})
@@ -303,7 +295,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                         Text("준비한 짐을 차량으로 보내세요",fontSize=26.sp,modifier=Modifier.padding(vertical=20.dp))
                         Text("방문지 ${trip.stops.size}곳 · 짐 ${trip.items.size}개\n휴대폰과 차량을 같은 Wi-Fi에 연결해 주세요.",color=Soft)
                         Button(onClick={wireless=true},enabled=!busy,modifier=Modifier.padding(vertical=16.dp).heightIn(min=56.dp)) { Text("차량으로 보내기") }
-                        Text("휴대폰에서만 사용할 경우 다음으로 진행할 수 있어요.",color=Soft)
+                        Text("차량 앱에서 ‘휴대폰에서 받기’를 열고 연결해 주세요. 전송 후 전달 확인으로 진행합니다.",color=Soft)
                         Spacer(Modifier.weight(1f))
                     } else {
                     Column(Modifier.fillMaxWidth().padding(vertical=12.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
@@ -342,7 +334,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                             2 -> trip.items.isNotEmpty() && trip.items.none { it.state==ItemState.READY }
                             4 -> trip.items.isNotEmpty() && trip.items.all { it.state==ItemState.DELIVERED }
                             else -> true
-                        },modifier=Modifier.weight(1f).heightIn(min=56.dp)) { Text(if(step==4) "외출 마치기" else "다음 · ${steps[step+1]}") }
+                        },modifier=Modifier.weight(1f).heightIn(min=56.dp)) { Text(if(step==4) "새 외출 준비" else "다음 · ${steps[step+1]}") }
                     }
                 }
             }
@@ -384,7 +376,7 @@ private fun ItemCard(item: Luggage,store: TripStore,delivery: Boolean,enabled: B
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End,verticalAlignment=Alignment.CenterVertically) {
                 if(showActions && !delivery && item.state==ItemState.READY) Button(enabled=enabled,onClick={onState(ItemState.LOADED)},modifier=Modifier.heightIn(min=56.dp)) { Text("실었어요") }
                 if(delivery && item.state==ItemState.LOADED) Button(enabled=enabled,onClick={onState(ItemState.DELIVERED)},modifier=Modifier.heightIn(min=56.dp)) { Text("건넸어요") }
-                if(item.state!=ItemState.READY) TextButton(enabled=enabled,onClick={onState(if(item.state==ItemState.DELIVERED) ItemState.LOADED else ItemState.READY)}) { Text("되돌리기") }
+                if(item.state!=ItemState.READY) TextButton(enabled=enabled,onClick={onState(if(item.state==ItemState.DELIVERED) ItemState.LOADED else ItemState.READY)}) { Text(if(item.state==ItemState.DELIVERED) "전달 취소" else "적재 취소") }
                 if(!delivery && item.state==ItemState.READY) TextButton(enabled=enabled,onClick=onDelete) { Text("삭제") }
             }
         }

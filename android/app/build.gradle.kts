@@ -8,6 +8,8 @@ plugins {
 val localConfig = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }
+val placeSearchUrl = (localConfig.getProperty("PLACE_SEARCH_URL") ?: System.getenv("PLACE_SEARCH_URL") ?: "").trim()
+require(placeSearchUrl.isEmpty() || placeSearchUrl.startsWith("https://") || placeSearchUrl.startsWith("http://127.0.0.1:"))
 val naverMapKey = (localConfig.getProperty("NAVER_MAP_CLIENT_ID") ?: System.getenv("NAVER_MAP_CLIENT_ID") ?: "").trim()
 require(naverMapKey.matches(Regex("[A-Za-z0-9_-]*"))) { "Invalid NAVER_MAP_CLIENT_ID format" }
 // Gradle's Windows test worker can lose non-ASCII classpath entries.
@@ -22,10 +24,11 @@ android {
         applicationId = "io.changyeoga.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 9
-        versionName = "0.6.2"
+        versionCode = 10
+        versionName = "0.7.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["naverMapKey"] = naverMapKey
+        buildConfigField("String", "PLACE_SEARCH_URL", "\"${placeSearchUrl}\"")
         buildConfigField("boolean", "HAS_NAVER_MAP_KEY", naverMapKey.isNotEmpty().toString())
     }
     flavorDimensions += "surface"

@@ -29,7 +29,7 @@ class MapScreenTest {
                 fun views(view:View):List<View> = listOf(view) + if(view is ViewGroup)
                     (0 until view.childCount).flatMap { views(view.getChildAt(it)) } else emptyList()
                 val all=views(activity.window.decorView)
-                assertTrue(all.filterIsInstance<EditText>().any { it.hint.toString().contains("주소 검색") })
+                assertTrue(all.filterIsInstance<EditText>().any { it.hint.toString().contains("장소명 검색") })
                 assertFalse(all.filterIsInstance<TextView>().any { it.text.contains("설정을 기다리고") })
             }
         }

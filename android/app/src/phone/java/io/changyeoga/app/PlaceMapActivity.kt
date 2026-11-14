@@ -54,7 +54,7 @@ class PlaceMapActivity : FragmentActivity() {
             return
         }
         locationSource=FusedLocationSource(this,100)
-        val query=EditText(this).apply { hint="도로명·지번 주소 검색";isSingleLine=true }
+        val query=EditText(this).apply { hint="장소명 검색 · 예: 수원월드컵경기장";isSingleLine=true }
         layout.addView(query)
         status=TextView(this).apply { text="지도를 눌러 방문지를 선택하세요. 현재 위치는 오른쪽 아래 버튼으로 확인합니다." }
         val sdk=NaverMapSdk.getInstance(this)
@@ -71,7 +71,7 @@ class PlaceMapActivity : FragmentActivity() {
             }
         }
         sdk.onAuthFailedListener=authListener
-        val search=Button(this).apply { text="주소 찾기" }
+        val search=Button(this).apply { text="장소 찾기" }
         layout.addView(search)
         layout.addView(status)
         val frame=FrameLayout(this).apply { id=R.id.visit_map_container }
@@ -89,31 +89,29 @@ class PlaceMapActivity : FragmentActivity() {
             map.setOnMapClickListener { _, point -> queryVersion++; choose(point) }
             val lat=savedInstanceState?.getDouble("latitude") ?: intent.getDoubleExtra("latitude",Double.NaN)
             val lon=savedInstanceState?.getDouble("longitude") ?: intent.getDoubleExtra("longitude",Double.NaN)
-            if(lat.isFinite() && lon.isFinite()) choose(LatLng(lat,lon))
+            if(lat.isFinite() && lon.isFinite()) choose(LatLng(lat,lon),savedInstanceState?.getString("placeName") ?: intent.getStringExtra("name"))
         }
         search.setOnClickListener {
             val address=query.text.toString().trim()
-            if(address.isEmpty()) { status.text="검색할 주소를 입력해 주세요.";return@setOnClickListener }
+            if(address.isEmpty()) { status.text="장소명이나 주소를 입력해 주세요.";return@setOnClickListener }
             val request=++queryVersion
             search.isEnabled=false
-            status.text="주소를 찾고 있어요…"
+            status.text="장소를 찾고 있어요…"
             lifecycleScope.launch {
-                val result=withContext(Dispatchers.IO) {
-                    runCatching {
-                        @Suppress("DEPRECATION")
-                        Geocoder(this@PlaceMapActivity,Locale.KOREA).getFromLocationName(address,5).orEmpty()
-                    }.getOrDefault(emptyList())
-                }
+                val result=withContext(Dispatchers.IO) { runCatching { PlaceSearch.find(address) } }
                 search.isEnabled=true
-                if(request!=queryVersion) return@launch
-                if(result.isEmpty()) status.text="주소를 찾지 못했습니다. 자세한 주소를 입력하거나 지도에서 선택하세요."
-                else android.app.AlertDialog.Builder(this@PlaceMapActivity)
-                    .setTitle("방문할 주소를 선택하세요")
-                    .setItems(result.map { it.getAddressLine(0) ?: address }.toTypedArray()) { _, index ->
-                        val item=result[index]
-                        placeName=item.getAddressLine(0) ?: address
-                        choose(LatLng(item.latitude,item.longitude))
-                    }.setNegativeButton("취소",null).show()
+                if(request!=queryVersion || isFinishing || isDestroyed) return@launch
+                result.fold(onSuccess={ places ->
+                    if(places.isEmpty()) status.text="검색 결과가 없어요. 지역을 함께 입력하거나 지도에서 선택해 주세요."
+                    else android.app.AlertDialog.Builder(this@PlaceMapActivity)
+                        .setTitle("방문할 장소 선택 · 네이버 검색")
+                        .setItems(places.map { "${it.name}\n${it.address}" }.toTypedArray()) { _, index ->
+                            val item=places[index]
+                            choose(LatLng(item.latitude,item.longitude),item.name,item.address)
+                        }.setNegativeButton("취소",null).show()
+                },onFailure={
+                    status.text=if(BuildConfig.PLACE_SEARCH_URL.isBlank()) "장소 검색 서버 연결 준비 중이에요. 지도에서 직접 선택할 수 있어요." else "장소 검색에 연결하지 못했어요. 잠시 후 다시 시도하거나 지도에서 선택해 주세요."
+                })
             }
         }
         confirm.setOnClickListener {
@@ -132,9 +130,9 @@ class PlaceMapActivity : FragmentActivity() {
                 .setNegativeButton("취소",null).show()
         }
     }
-    private fun choose(point: LatLng) {
+    private fun choose(point: LatLng, name:String?=null, address:String?=null) {
         if(authFailed) return
-        placeName="선택한 장소"
+        placeName=name ?: "선택한 장소"
         selected=point
         naver?.locationTrackingMode=LocationTrackingMode.None
         marker.position=point
@@ -142,6 +140,11 @@ class PlaceMapActivity : FragmentActivity() {
         naver?.moveCamera(CameraUpdate.scrollAndZoomTo(point,16.0))
         status.text="선택한 장소를 확인한 뒤 ‘이 위치로 저장’을 눌러 주세요."
         val request=++queryVersion
+        if(name!=null) {
+            status.text="$name\n${address.orEmpty()}"
+            confirm.isEnabled=true
+            return
+        }
         lifecycleScope.launch {
             val address=withContext(Dispatchers.IO) { runCatching {
                 @Suppress("DEPRECATION")
@@ -155,6 +158,7 @@ class PlaceMapActivity : FragmentActivity() {
         confirm.isEnabled=true
     }
     override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString("placeName",placeName)
         selected?.let { outState.putDouble("latitude",it.latitude);outState.putDouble("longitude",it.longitude) }
         super.onSaveInstanceState(outState)
     }

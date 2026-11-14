@@ -31,22 +31,16 @@ class TripFlowTest {
         ui.onNodeWithText("차량으로 보내기").assertIsDisplayed()
         ui.onNodeWithText("다음 · 도착 후 전달").performClick()
         ui.onNodeWithText("건넸어요").assertIsDisplayed()
-        ui.onNodeWithText("외출 마치기").assertIsNotEnabled()
+        ui.onNodeWithText("새 외출 준비").assertIsNotEnabled()
     }
-    @Test fun phoneCanReachAllStagesAndVoiceWithoutOverflowMenu() {
+    @Test fun phoneFocusesOnCurrentStep() {
         if(BuildConfig.IS_VEHICLE) return
-        val context=ApplicationProvider.getApplicationContext<Context>()
-        @Suppress("DEPRECATION")
-        val version=context.packageManager.getPackageInfo(context.packageName,0).versionName.orEmpty()
-        ui.onNodeWithText("지도에서 방문지를 찾고, 가져갈 짐을 준비해요 · $version").assertIsDisplayed()
         ui.onNodeWithText("예시로 둘러보기").performClick()
-        ui.onNodeWithText("4 차량에 보내기").performClick()
-        ui.onNodeWithText("차량으로 보내기").assertIsDisplayed()
-        ui.onNodeWithText("1 방문지 정하기").performClick()
+        ui.onNodeWithText("1 방문지 정하기").assertDoesNotExist()
         ui.onNodeWithText("+ 지도에서 방문지 찾기").assertIsDisplayed()
-        ui.onNodeWithText("음성·도착 안내").performClick()
-        ui.onNodeWithText("음성 명령").assertIsDisplayed()
-        ui.onNodeWithText("방문지 위치").assertDoesNotExist()
+        ui.onNodeWithText("다음 · 짐 사진 등록").performClick()
+        ui.onNodeWithText("촬영").assertIsDisplayed()
+        ui.onNodeWithText("다음 · 차에 싣기").assertIsDisplayed()
     }
     @Test fun prepareDeliverUndoAndRestart() {
         if(!BuildConfig.IS_VEHICLE) return
