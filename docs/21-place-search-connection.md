@@ -26,3 +26,9 @@
 [배포 설정](../server/DEPLOY.md)
 
 공식 근거: https://api.ncloud-docs.com/docs/naver-api-hub-search-local
+
+## HTTPS 서버 연결 확인 (2026-11-14)
+
+https://hyundai-app-xc7k.onrender.com 을 앱에 적용했다. /health 정상 및 수원월드컵경기장 실검색 결과 5개, 본체 주소 월드컵로 310과 좌표를 확인했다. 사용자 Render 환경변수 설정 후 503 오류가 해소됐다. 배포 APK는 이 HTTPS 주소를 사용하며 adb reverse와 PC 로컬 서버가 필요하지 않다. 앞의 localhost 내용은 개발 검증 이력이다.
+
+최종 HTTPS APK로 실제 Android 35 계측 재실행: 경기장 검색→주소 결과 선택→별명 창 확인, OK (1 test), 22.773초.
