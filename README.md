@@ -2,9 +2,9 @@
 
 챙기려던 물건을 잊지 않도록, 휴대폰에서 준비물을 등록하고 차량에서 적재와 전달을 확인하는 Pleos 차량용 앱입니다.
 
-**현재 버전 0.10.0 · 업데이트 2026.11.15**
+**현재 버전 0.10.1 release · 업데이트 2026.11.15**
 
-[휴대폰 APK](apk/changyeoga-phone-debug.apk) · [차량 APK](apk/changyeoga-vehicle-debug.apk) · [차량 화면 시연용 APK](apk/changyeoga-demo-debug.apk) · [시연 영상](docs/media/changyeoga-demo-0.10.0.mp4)
+[휴대폰 APK](apk/release/박경태_챙겨가준비_release.apk) · [차량 APK](apk/release/박경태_챙겨가_release.apk) · [차량 화면 시연용 APK](apk/release/박경태_챙겨가시연_release.apk) · [시연 영상](docs/media/changyeoga-demo-0.10.0.mp4)
 
 ## 사용 흐름
 
@@ -34,11 +34,11 @@
 
 | APK | 실행 환경 |
 |---|---|
-| [휴대폰](apk/changyeoga-phone-debug.apk) | Android 휴대폰에서 방문지와 준비물을 등록합니다. |
-| [차량](apk/changyeoga-vehicle-debug.apk) | Pleos/Android Automotive의 차량 신호를 읽습니다. P단과 UX 제한이 허용될 때 조작합니다. |
-| [차량 화면 시연용](apk/changyeoga-demo-debug.apk) | 일반 Android에서도 차량 UI를 실행합니다. 모의 P단 스위치로 잠금을 확인합니다. |
+| [휴대폰](apk/release/박경태_챙겨가준비_release.apk) | Android 휴대폰에서 방문지와 준비물을 등록합니다. |
+| [차량](apk/release/박경태_챙겨가_release.apk) | Pleos/Android Automotive의 차량 신호를 읽습니다. P단과 UX 제한이 허용될 때 조작합니다. |
+| [차량 화면 시연용](apk/release/박경태_챙겨가시연_release.apk) | 일반 Android에서도 차량 UI를 실행합니다. 모의 P단 스위치로 잠금을 확인합니다. |
 
-기존 앱 위에 업데이트 설치하면 목록과 사진을 유지합니다. 현재 공개된 APK는 debug 개발 빌드입니다. [설치 안내·SHA-256](apk/README.md) · [소스 빌드와 설정](android/README.md)
+제출용 APK는 0.10.1 release 서명 빌드입니다. 기존 debug 앱에서 전환할 때는 ZIP으로 목록을 내보낸 뒤 debug 앱을 삭제하고 release 앱을 설치해 가져옵니다. 이후 같은 release 서명으로 업데이트할 수 있습니다. [설치 안내·SHA-256](apk/README.md) · [소스 빌드와 설정](android/README.md)
 
 ## 개발과 시험 환경
 

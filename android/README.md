@@ -1,6 +1,6 @@
 # 챙겨가 Android 앱
 
-현재 버전은 **0.10.0 (versionCode 17)**입니다. Kotlin·Jetpack Compose로 휴대폰·Pleos 차량·차량 화면 시연 앱을 하나의 프로젝트에서 빌드합니다.
+현재 버전은 **0.10.1 release (versionCode 18)**입니다. Kotlin·Jetpack Compose로 휴대폰·Pleos 차량·차량 화면 시연 앱을 하나의 프로젝트에서 빌드합니다.
 
 ## 실행할 앱 고르기
 
@@ -76,18 +76,35 @@ cd android
 sh gradlew assemblePhoneDebug assembleVehicleDebug assembleDemoDebug testPhoneDebugUnitTest
 ```
 
-출력 경로를 지정하지 않으면 `android/app/build/outputs/apk/<flavor>/debug/`에 생성됩니다. 현재 제공 파일은 debug 서명 빌드이며, release 서명 설정은 별도로 준비합니다.
+출력 경로를 지정하지 않으면 `android/app/build/outputs/apk/<flavor>/debug/`에 생성됩니다. 제출용 release APK는 별도 비공개 서명키로 빌드했습니다. 같은 서명키로만 이후 release 업데이트를 설치할 수 있습니다. 0.10.1은 기존 C 디자인과 기능을 유지한 release 서명 버전입니다.
+
+### Release 빌드
+
+서명키를 준비한 뒤 Git에서 제외된 `local.properties` 또는 같은 이름의 환경변수에 아래 네 항목을 설정합니다. 값은 저장소에 올리지 않습니다.
+
+```properties
+RELEASE_STORE_FILE=signing/your-release.jks
+RELEASE_STORE_PASSWORD=YOUR_PRIVATE_PASSWORD
+RELEASE_KEY_ALIAS=YOUR_KEY_ALIAS
+RELEASE_KEY_PASSWORD=YOUR_PRIVATE_PASSWORD
+```
+
+```sh
+sh gradlew assemblePhoneRelease assembleVehicleRelease assembleDemoRelease testPhoneReleaseUnitTest
+```
+
+서명 설정 없이 빌드한 release 산출물은 unsigned입니다. 실제 배포 파일은 `apksigner verify --verbose APK_PATH`로 확인합니다.
 
 ### 설치
 
 ```sh
-adb install -r apk/changyeoga-phone-debug.apk
+adb install -r "apk/release/박경태_챙겨가준비_release.apk"
 adb shell am start -n io.changyeoga.app.phone/io.changyeoga.app.MainActivity
 # 차량용 패키지: io.changyeoga.app
 # 시연용 패키지: io.changyeoga.app.demo
 ```
 
-위 설치 명령은 저장소 루트에서 실행합니다. 기존 목록을 유지하려면 삭제 없이 업데이트 설치합니다.
+위 설치 명령은 저장소 루트에서 실행합니다. 기존 debug 앱과 release 앱의 서명은 다릅니다. 전환 전 ZIP 내보내기로 목록을 보관하고 debug 앱을 삭제한 뒤 release 설치·가져오기를 진행합니다. release 간 업데이트는 같은 서명키를 사용합니다.
 
 ## SDK와 시험 환경
 
@@ -103,6 +120,8 @@ adb shell am start -n io.changyeoga.app.phone/io.changyeoga.app.MainActivity
 | 최신 차량 시연 UI | Android 15/API 35, 1920×1080, density 240, demo 앱의 모의 상태 |
 
 0.10.0에서 세 flavor 빌드와 휴대폰 단위 테스트, 휴대폰 UI 3개·차량 시연 UI 2개 검사를 통과했습니다. [적용·실행 기록](../docs/28-c-design-applied.md)과 [초기 Pleos 기록](../docs/05-first-run.md)을 참고하세요.
+
+0.10.1 release는 세 flavor 빌드·서명·비디버그 설정, release 단위 테스트와 lintVital을 확인했습니다. 별도 Android 35 에뮬레이터에서 phone·demo release 설치 후 적재·지도·공유 메모·전달·모의 주행 잠금을 확인했습니다. [Release 기록](../docs/29-release-0.10.1.md)
 
 ## 다음 개발
 

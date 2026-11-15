@@ -12,6 +12,9 @@ val placeSearchUrl = (localConfig.getProperty("PLACE_SEARCH_URL") ?: System.gete
 require(placeSearchUrl.isEmpty() || placeSearchUrl.startsWith("https://") || placeSearchUrl.startsWith("http://127.0.0.1:"))
 val naverMapKey = (localConfig.getProperty("NAVER_MAP_CLIENT_ID") ?: System.getenv("NAVER_MAP_CLIENT_ID") ?: "").trim()
 require(naverMapKey.matches(Regex("[A-Za-z0-9_-]*"))) { "Invalid NAVER_MAP_CLIENT_ID format" }
+fun signingValue(name:String):String? = localConfig.getProperty(name) ?: System.getenv(name)
+val releaseSigningReady=listOf("RELEASE_STORE_FILE","RELEASE_STORE_PASSWORD","RELEASE_KEY_ALIAS","RELEASE_KEY_PASSWORD")
+    .all { !signingValue(it).isNullOrBlank() }
 // Gradle's Windows test worker can lose non-ASCII classpath entries.
 // Keep source in the workspace and optionally put generated output in an ASCII path.
 providers.gradleProperty("buildRoot").orNull?.let { layout.buildDirectory.set(file("$it/app")) }
@@ -24,12 +27,27 @@ android {
         applicationId = "io.changyeoga.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 17
-        versionName = "0.10.0"
+        versionCode = 18
+        versionName = "0.10.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["naverMapKey"] = naverMapKey
         buildConfigField("String", "PLACE_SEARCH_URL", "\"${placeSearchUrl}\"")
         buildConfigField("boolean", "HAS_NAVER_MAP_KEY", naverMapKey.isNotEmpty().toString())
+    }
+    signingConfigs {
+        if(releaseSigningReady) create("release") {
+            storeFile=rootProject.file(requireNotNull(signingValue("RELEASE_STORE_FILE")))
+            storePassword=signingValue("RELEASE_STORE_PASSWORD")
+            keyAlias=signingValue("RELEASE_KEY_ALIAS")
+            keyPassword=signingValue("RELEASE_KEY_PASSWORD")
+        }
+    }
+    buildTypes {
+        getByName("release") {
+            isDebuggable=false
+            isMinifyEnabled=false
+            if(releaseSigningReady) signingConfig=signingConfigs.getByName("release")
+        }
     }
     flavorDimensions += "surface"
     productFlavors {
