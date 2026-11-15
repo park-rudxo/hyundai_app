@@ -36,10 +36,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private val Ink = Color(0xFF0C191D)
-private val Panel = Color(0xFF172B31)
-private val Mint = Color(0xFF9BE4C5)
-private val Soft = Color(0xFFB4C8CC)
+private val Ink = Color(0xFF111318)
+private val Panel = Color(0xFF1D2128)
+private val Mint = Color(0xFFA9BDFF)
+private val Soft = Color(0xFFB4BCC8)
 
 class MainActivity: ComponentActivity() {
     private var vehicleGate: VehicleGate? = null
@@ -48,11 +48,11 @@ class MainActivity: ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
-            statusBarStyle=SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
-            navigationBarStyle=SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            statusBarStyle=if(BuildConfig.IS_VEHICLE) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT) else SystemBarStyle.light(android.graphics.Color.TRANSPARENT,android.graphics.Color.TRANSPARENT),
+            navigationBarStyle=if(BuildConfig.IS_VEHICLE) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT) else SystemBarStyle.light(android.graphics.Color.TRANSPARENT,android.graphics.Color.TRANSPARENT),
         )
         setContent {
-            MaterialTheme(colorScheme = darkColorScheme(primary=Mint,background=Ink,surface=Panel,onSurface=Color.White,onPrimary=Ink)) {
+            MaterialTheme(colorScheme = if(BuildConfig.IS_VEHICLE) darkColorScheme(primary=Mint,background=Ink,surface=Panel,onSurface=Color.White,onPrimary=Ink) else lightColorScheme(primary=Color(0xFF315EE8),onPrimary=Color.White,background=Color(0xFFF5F6F8),surface=Color.White,surfaceVariant=Color(0xFFEBEEF4),onSurface=Color(0xFF171B22),onBackground=Color(0xFF171B22),onSurfaceVariant=Color(0xFF59616D)), shapes=Shapes(small=RoundedCornerShape(12.dp),medium=RoundedCornerShape(16.dp),large=RoundedCornerShape(20.dp),extraLarge=RoundedCornerShape(20.dp))) {
                 val density=LocalDensity.current
                 val scale=if(BuildConfig.IS_VEHICLE) (LocalConfiguration.current.screenWidthDp / 1000f).coerceIn(1f,1.5f) else 1f
                 CompositionLocalProvider(LocalDensity provides Density(density.density*scale,density.fontScale)) {
@@ -228,7 +228,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                 Row(verticalAlignment=Alignment.CenterVertically) {
                     Text("챙겨가",fontSize=26.sp,fontWeight=FontWeight.Bold,color=Mint)
                     Spacer(Modifier.width(10.dp))
-                    Text(if(BuildConfig.IS_VEHICLE) "오늘의 방문" else "외출 준비",color=Soft,fontSize=16.sp)
+                    Text(if(BuildConfig.IS_VEHICLE) "오늘의 방문" else "외출 준비",color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=16.sp)
                 }
                 Box {
                     TextButton(onClick={if(phone) tools=true else more=true},enabled=allowed&&!busy) { Text(if(phone) "파일·새 외출" else "더보기") }
@@ -240,7 +240,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                     }
                 }
             }
-            Text(when { BuildConfig.IS_DEMO -> "시연 전용 · 주차와 도착을 직접 선택합니다"; BuildConfig.IS_VEHICLE -> signal; else -> "지도에서 방문지를 찾고, 가져갈 짐을 준비해요 · ${installedVersion}" },color=Soft,fontSize=14.sp)
+            Text(when { BuildConfig.IS_DEMO -> "시연 전용 · 주차와 도착을 직접 선택합니다"; BuildConfig.IS_VEHICLE -> signal; else -> "지도에서 방문지를 찾고, 가져갈 짐을 준비해요 · ${installedVersion}" },color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=14.sp)
             if(allowed && BuildConfig.IS_VEHICLE) Row(Modifier.horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                 Button(enabled=!busy&&!loadFailed,onClick={wireless=true}) { Text(if(BuildConfig.IS_VEHICLE) "휴대폰에서 받기" else "차량으로 보내기") }
                 TextButton(enabled=!busy&&!loadFailed,onClick={runCatching { exporter.launch("changyeoga-trip.zip") }.onFailure { error="파일 저장 앱을 열 수 없습니다." }}) { Text("목록 내보내기") }
@@ -250,7 +250,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                 Text("${step+1} / ${steps.size}  ·  ${steps[step]}",color=Mint,modifier=Modifier.padding(vertical=12.dp),fontSize=22.sp,fontWeight=FontWeight.Bold)
                 LinearProgressIndicator(progress={ (step+1)/5f },modifier=Modifier.fillMaxWidth())
             }
-            if(phone && step==0) Text("장소를 찾고, 그곳에 가져갈 짐을 등록해요.",color=Soft,modifier=Modifier.padding(vertical=8.dp))
+            if(phone && step==0) Text("장소를 찾고, 그곳에 가져갈 짐을 등록해요.",color=MaterialTheme.colorScheme.onSurfaceVariant,modifier=Modifier.padding(vertical=8.dp))
             if(phone && step==4) TextButton(onClick={assistantPanel=!assistantPanel}) { Text(if(assistantPanel) "안내 닫기" else "음성·도착 안내") }
             TripAssistant(trip,allowed&&!busy&&!loadFailed,showControls=if(phone) assistantPanel else tools,onSave={commit(it)},onArrive={ id ->
                 if(allowed&&!busy&&!loadFailed) { commit(trip.selectStop(id));delivery=true;step=4 }
@@ -266,7 +266,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                     Column(horizontalAlignment=Alignment.CenterHorizontally) {
                         Text("주차한 뒤 확인해 주세요",fontSize=30.sp,fontWeight=FontWeight.Bold)
                         Spacer(Modifier.height(16.dp))
-                        Text("차량 상태를 확인할 수 없거나 주행 제한이 적용되면\n사진과 확인 버튼을 잠급니다.",color=Soft)
+                        Text("차량 상태를 확인할 수 없거나 주행 제한이 적용되면\n사진과 확인 버튼을 잠급니다.",color=MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             } else {
@@ -277,7 +277,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                     Box(Modifier.weight(1f).fillMaxWidth(),contentAlignment=Alignment.Center) {
                         Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(16.dp)) {
                             Text("오늘 어디에 들르나요?",fontSize=32.sp,fontWeight=FontWeight.Bold)
-                            Text("방문지를 정하고, 그곳에 가져갈 짐을 사진으로 담아요.",color=Soft)
+                            Text("방문지를 정하고, 그곳에 가져갈 짐을 사진으로 담아요.",color=MaterialTheme.colorScheme.onSurfaceVariant)
                             Button(onClick={if(phone) openMap() else addStop=true},modifier=Modifier.heightIn(min=56.dp)) { Text(if(phone) "지도에서 첫 방문지 찾기" else "첫 방문지 추가",fontSize=18.sp) }
                             OutlinedButton(onClick={commit(Trip.example())}) { Text("예시로 둘러보기") }
                         }
@@ -287,7 +287,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                     if(!phone) Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
                         FilterChip(selected=!delivery,onClick={delivery=false},label={Text("1  출발 준비")})
                         FilterChip(selected=delivery,onClick={delivery=true},label={Text("2  도착·전달")})
-                        if(trip.example) Text("예시 방문지 · 직접 선택",Modifier.padding(12.dp),color=Soft)
+                        if(trip.example) Text("예시 방문지 · 직접 선택",Modifier.padding(12.dp),color=MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     if(!phone || step!=0) FlowRow(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)) {
                         trip.stops.forEach { stop ->
@@ -305,7 +305,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                                 Card(Modifier.fillMaxWidth()) {
                                     Column(Modifier.padding(16.dp)) {
                                         Text(destination.name,fontSize=20.sp,fontWeight=FontWeight.Bold)
-                                        Text(if(destination.latitude==null) "위치를 지정해 주세요" else "지도에 위치 저장됨",color=Soft)
+                                        Text(if(destination.latitude==null) "위치를 지정해 주세요" else "지도에 위치 저장됨",color=MaterialTheme.colorScheme.onSurfaceVariant)
                                         TextButton(onClick={openMap(destination)}) { Text("지도에서 위치 변경") }
                                     }
                                 }
@@ -314,15 +314,15 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                         }
                     } else if(phone && step==3) {
                         Text("준비한 짐을 차량으로 보내세요",fontSize=26.sp,modifier=Modifier.padding(vertical=20.dp))
-                        Text("방문지 ${trip.stops.size}곳 · 짐 ${trip.items.size}개\n휴대폰과 차량을 같은 Wi-Fi에 연결해 주세요.",color=Soft)
+                        Text("방문지 ${trip.stops.size}곳 · 짐 ${trip.items.size}개\n휴대폰과 차량을 같은 Wi-Fi에 연결해 주세요.",color=MaterialTheme.colorScheme.onSurfaceVariant)
                         Button(onClick={wireless=true},enabled=!busy,modifier=Modifier.padding(vertical=16.dp).heightIn(min=56.dp)) { Text("차량으로 보내기") }
-                        Text("차량 앱에서 ‘휴대폰에서 받기’를 열고 연결해 주세요. 전송 후 전달 확인으로 진행합니다.",color=Soft)
+                        Text("차량 앱에서 ‘휴대폰에서 받기’를 열고 연결해 주세요. 전송 후 전달 확인으로 진행합니다.",color=MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.weight(1f))
                     } else {
                     Column(Modifier.fillMaxWidth().padding(vertical=12.dp),verticalArrangement=Arrangement.spacedBy(8.dp)) {
                         Column {
                             Text(if(delivery) "${stop.name}에서 건넬 짐" else "${stop.name}에 가져갈 짐",fontSize=26.sp,fontWeight=FontWeight.Bold)
-                            Text(if(delivery) "방문지 직접 선택 · 전달 ${items.count { it.state==ItemState.DELIVERED }}/${items.size}" else "적재 ${items.count { it.state!=ItemState.READY }}/${items.size} · 사진만 찍으면 아직 준비 중이에요",color=Soft)
+                            Text(if(delivery) "방문지 직접 선택 · 전달 ${items.count { it.state==ItemState.DELIVERED }}/${items.size}" else "적재 ${items.count { it.state!=ItemState.READY }}/${items.size} · 사진만 찍으면 아직 준비 중이에요",color=MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         if(!delivery && (!phone || step==1)) Row(horizontalArrangement=Arrangement.spacedBy(8.dp)) {
                             if(!BuildConfig.IS_VEHICLE) OutlinedButton(enabled=!busy,onClick={pendingStop=stop.id; runCatching { camera.launch(null) }.onFailure { pendingStop=null; error="카메라 앱이 없습니다. 사진 선택을 이용해 주세요." }}) { Text("촬영") }
@@ -330,7 +330,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                         }
                     }
                     LazyColumn(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(12.dp),contentPadding=PaddingValues(bottom=20.dp)) {
-                        if(items.isEmpty()) item { Text("아직 등록한 짐이 없어요. 사진을 추가해 주세요.",Modifier.padding(24.dp),color=Soft) }
+                        if(items.isEmpty()) item { Text("아직 등록한 짐이 없어요. 사진을 추가해 주세요.",Modifier.padding(24.dp),color=MaterialTheme.colorScheme.onSurfaceVariant) }
                         items(items,key={it.id}) { luggage ->
                             ItemCard(luggage,store,delivery,!busy,showActions=!phone||step!=1,onState={ state ->
                                 val next=trip.changeState(luggage.id,state)
@@ -344,8 +344,8 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
                         }
                     }
                     }
-                    if(phone && step==1) Text("각 방문지에 사진을 한 장 이상 추가하면 다음으로 진행할 수 있어요.",color=Soft,fontSize=14.sp)
-                    if(phone && step==2) Text("모든 방문지의 짐을 실었다고 확인하면 다음으로 진행할 수 있어요.",color=Soft,fontSize=14.sp)
+                    if(phone && step==1) Text("각 방문지에 사진을 한 장 이상 추가하면 다음으로 진행할 수 있어요.",color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=14.sp)
+                    if(phone && step==2) Text("모든 방문지의 짐을 실었다고 확인하면 다음으로 진행할 수 있어요.",color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=14.sp)
                     if(phone) Row(Modifier.fillMaxWidth().padding(top=8.dp),horizontalArrangement=Arrangement.spacedBy(12.dp)) {
                         if(step>0) OutlinedButton(onClick={step--;delivery=step==4},enabled=!busy,modifier=Modifier.heightIn(min=56.dp)) { Text("이전") }
                         Button(onClick={
@@ -369,7 +369,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
             OutlinedButton(onClick={tools=false;runCatching{exporter.launch("changyeoga-trip.zip")}.onFailure{error="파일 저장 앱을 열 수 없습니다."}},enabled=!loadFailed,modifier=Modifier.fillMaxWidth()) { Text("목록 내보내기") }
             OutlinedButton(onClick={tools=false;importConfirm=true},modifier=Modifier.fillMaxWidth()) { Text("목록 가져오기") }
             TextButton(onClick={tools=false;reset=true},modifier=Modifier.fillMaxWidth()) { Text("새 외출") }
-            Text("설치 버전 ${installedVersion}",color=Soft)
+            Text("설치 버전 ${installedVersion}",color=MaterialTheme.colorScheme.onSurfaceVariant)
             TextButton(onClick={tools=false;assistantPanel=true}) { Text("위치·음성 안내") }
         }
     },confirmButton={TextButton(onClick={tools=false}){Text("닫기")}})
@@ -382,17 +382,21 @@ internal fun ItemCard(item: Luggage,store: TripStore,delivery: Boolean,enabled: 
     val bitmap by produceState<android.graphics.Bitmap?>(null,item.photo) {
         value=withContext(Dispatchers.IO) { item.photo?.let { runCatching { BitmapFactory.decodeFile(store.photoFile(it).absolutePath) }.getOrNull() } }
     }
-    Card(colors=CardDefaults.cardColors(containerColor=Panel),shape=RoundedCornerShape(18.dp)) {
+    Card(colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),shape=RoundedCornerShape(18.dp)) {
         Column(Modifier.fillMaxWidth().padding(18.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
+          if(!BuildConfig.IS_VEHICLE) Box(Modifier.fillMaxWidth().height(180.dp).background(MaterialTheme.colorScheme.surfaceVariant,RoundedCornerShape(12.dp)),contentAlignment=Alignment.Center) {
+              if(bitmap!=null) Image(bitmap!!.asImageBitmap(),contentDescription=item.label,modifier=Modifier.fillMaxSize(),contentScale=ContentScale.Fit)
+              else Text(if(item.photo==null) "사진 없음" else "사진을 읽지 못했어요",color=MaterialTheme.colorScheme.onSurfaceVariant)
+          }
           Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(16.dp)) {
-            Box(Modifier.size(110.dp).background(Color(0xFF284148),RoundedCornerShape(12.dp)),contentAlignment=Alignment.Center) {
+            if(BuildConfig.IS_VEHICLE) Box(Modifier.size(140.dp).background(MaterialTheme.colorScheme.surfaceVariant,RoundedCornerShape(12.dp)),contentAlignment=Alignment.Center) {
                 if(bitmap!=null) Image(bitmap!!.asImageBitmap(),contentDescription=item.label,modifier=Modifier.fillMaxSize(),contentScale=ContentScale.Crop)
-                else Text(if(item.photo==null) "사진 없음" else "사진 읽기 실패",color=Soft)
+                else Text(if(item.photo==null) "사진 없음" else "사진 읽기 실패",color=MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(6.dp)) {
-                Text(item.label,fontSize=22.sp,fontWeight=FontWeight.Bold)
-                Text(when(item.state){ItemState.READY->"준비 중";ItemState.LOADED->"차에 실었어요";ItemState.DELIVERED->"전달 완료"},color=Mint,fontSize=18.sp)
-                if(delivery && item.state==ItemState.READY) Text("출발 준비에서 적재를 먼저 확인해 주세요.",color=Soft,fontSize=14.sp)
+                Text(item.label,fontSize=20.sp,fontWeight=FontWeight.Bold)
+                Text(when(item.state){ItemState.READY->"준비 중";ItemState.LOADED->"차에 실었어요";ItemState.DELIVERED->"전달 완료"},color=MaterialTheme.colorScheme.primary,fontSize=18.sp)
+                if(delivery && item.state==ItemState.READY) Text("출발 준비에서 적재를 먼저 확인해 주세요.",color=MaterialTheme.colorScheme.onSurfaceVariant,fontSize=14.sp)
             }
           }
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.End,verticalAlignment=Alignment.CenterVertically) {

@@ -32,6 +32,7 @@ class PlaceMapActivity : FragmentActivity() {
     private lateinit var status: TextView
     private lateinit var confirm: Button
     private var queryVersion = 0
+    private var lastQuery = ""
     private var searchJob: Job? = null
     private var authFailed = false
     private var placeName = "선택한 장소"
@@ -39,9 +40,12 @@ class PlaceMapActivity : FragmentActivity() {
     private var authListener: NaverMapSdk.OnAuthFailedListener? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(android.R.style.Theme_Material_Light_NoActionBar)
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window,false)
-        val layout = LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(24,24,24,24) }
+        WindowCompat.getInsetsController(window,window.decorView).isAppearanceLightStatusBars=true
+        WindowCompat.getInsetsController(window,window.decorView).isAppearanceLightNavigationBars=true
+        val layout = LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setBackgroundColor(android.graphics.Color.rgb(245,246,248)); setPadding(24,24,24,24) }
         setContentView(layout)
         ViewCompat.setOnApplyWindowInsetsListener(layout) { view,insets ->
             val bars=insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime())
@@ -60,7 +64,7 @@ class PlaceMapActivity : FragmentActivity() {
         locationSource=FusedLocationSource(this,100)
         val query=EditText(this).apply { hint="장소명 검색 · 예: 수원월드컵경기장";isSingleLine=true }
         layout.addView(query)
-        status=TextView(this).apply { text="지도를 눌러 방문지를 선택하세요. 현재 위치는 오른쪽 아래 버튼으로 확인합니다." }
+        status=TextView(this).apply { text="장소 이름을 입력하세요. 지도에서도 직접 선택할 수 있어요.";textSize=14f;setPadding(0,24,0,24) }
         val sdk=NaverMapSdk.getInstance(this)
         sdk.client=NaverMapSdk.NcpKeyClient(key)
         previousAuthListener=sdk.onAuthFailedListener
@@ -81,9 +85,9 @@ class PlaceMapActivity : FragmentActivity() {
         layout.addView(status)
         val frame=FrameLayout(this).apply { id=R.id.visit_map_container }
         layout.addView(frame,LinearLayout.LayoutParams(-1,0,1f))
-        confirm=Button(this).apply { text="이 위치로 저장";isEnabled=false }
+        confirm=Button(this).apply { text="이 위치로 저장";isEnabled=false;styleButton(this,true) }
         layout.addView(confirm)
-        layout.addView(Button(this).apply { text="취소";setOnClickListener { finish() } })
+        layout.addView(Button(this).apply { text="취소";styleButton(this,false);setOnClickListener { finish() } })
         val fragment=(supportFragmentManager.findFragmentById(frame.id) as? MapFragment)
             ?: MapFragment.newInstance().also { supportFragmentManager.beginTransaction().replace(frame.id,it).commitNow() }
         fragment.getMapAsync { map ->
@@ -98,6 +102,8 @@ class PlaceMapActivity : FragmentActivity() {
         }
         query.doAfterTextChanged {
             val address=it.toString().trim()
+            if(address==lastQuery) return@doAfterTextChanged
+            lastQuery=address
             val request=++queryVersion
             searchJob?.cancel()
             results.removeAllViews()
@@ -122,6 +128,12 @@ class PlaceMapActivity : FragmentActivity() {
                     places.forEach { item ->
                         results.addView(Button(this@PlaceMapActivity).apply {
                             text="${item.name}\n${item.address}"
+                            styleButton(this,false)
+                            textSize=17f
+                            text=android.text.SpannableString(text).apply {
+                                setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD),0,item.name.length,0)
+                                setSpan(android.text.style.RelativeSizeSpan(0.82f),item.name.length+1,length,0)
+                            }
                             isAllCaps=false
                             gravity=android.view.Gravity.START or android.view.Gravity.CENTER_VERTICAL
                             minHeight=(64*resources.displayMetrics.density).toInt()
@@ -155,6 +167,23 @@ class PlaceMapActivity : FragmentActivity() {
                 .setNeutralButton("별명 없이 저장") { _,_ -> save(placeName) }
                 .setNegativeButton("취소",null).show()
         }
+    }
+    private fun styleButton(button:Button,primary:Boolean) {
+        val density=resources.displayMetrics.density
+        button.isAllCaps=false
+        button.minHeight=(60*density).toInt()
+        button.setPadding((16*density).toInt(),(12*density).toInt(),(16*density).toInt(),(12*density).toInt())
+        button.background=android.graphics.drawable.GradientDrawable().apply {
+            cornerRadius=16*density
+            setColor(if(primary) android.graphics.Color.rgb(49,94,232) else android.graphics.Color.WHITE)
+        }
+        button.backgroundTintList=android.content.res.ColorStateList(
+            arrayOf(intArrayOf(-android.R.attr.state_enabled),intArrayOf()),
+            intArrayOf(android.graphics.Color.rgb(225,229,237),if(primary) android.graphics.Color.rgb(49,94,232) else android.graphics.Color.WHITE))
+        button.setTextColor(android.content.res.ColorStateList(
+            arrayOf(intArrayOf(-android.R.attr.state_enabled),intArrayOf()),
+            intArrayOf(android.graphics.Color.rgb(89,97,109),if(primary) android.graphics.Color.WHITE else android.graphics.Color.rgb(23,27,34))))
+        button.layoutParams=LinearLayout.LayoutParams(-1,-2).apply { topMargin=(8*density).toInt() }
     }
     private fun choose(point: LatLng, name:String?=null, address:String?=null) {
         if(authFailed) return

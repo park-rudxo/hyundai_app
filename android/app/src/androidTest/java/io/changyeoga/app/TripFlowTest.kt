@@ -16,7 +16,11 @@ class TripFlowTest {
         if(!BuildConfig.IS_VEHICLE) {
             ui.waitForIdle()
             if(ui.onAllNodesWithText("준비 화면 먼저 열기").fetchSemanticsNodes().isNotEmpty())
-                ui.onNodeWithText("준비 화면 먼저 열기").performClick()
+                try { ui.onNodeWithText("준비 화면 먼저 열기").performClick() }
+                catch(e:AssertionError) {
+                    // The real readiness request may complete between lookup and click.
+                    if(ui.onAllNodesWithText("파일·새 외출").fetchSemanticsNodes().isEmpty()) throw e
+                }
         }
         ui.onNodeWithText(if(BuildConfig.IS_VEHICLE) "더보기" else "파일·새 외출").performClick()
         ui.onNodeWithText("새 외출").performClick()
