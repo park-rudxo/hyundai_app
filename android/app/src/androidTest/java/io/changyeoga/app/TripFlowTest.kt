@@ -34,7 +34,7 @@ class TripFlowTest {
         ui.onNodeWithText("다음 · 차에 싣기").performClick()
         ui.onNodeWithText("다음 · 차량에 보내기").assertIsNotEnabled()
         ui.onNodeWithText("실었어요").performClick()
-        if(!BuildConfig.IS_VEHICLE) ui.onNodeWithText("외가  ·  방문지 변경").performClick()
+        if(!BuildConfig.IS_VEHICLE) ui.onNodeWithText("방문지 변경").performClick()
         ui.onNodeWithText("친가",useUnmergedTree=true).performClick()
         ui.onNodeWithText("실었어요").performClick()
         ui.onNodeWithText("다음 · 차량에 보내기").performClick()
@@ -58,10 +58,10 @@ class TripFlowTest {
         if(!BuildConfig.IS_VEHICLE) return
         ui.onNodeWithText("예시로 둘러보기").performClick()
         ui.onNodeWithText("실었어요").performClick()
-        ui.onNodeWithText("2  도착·전달").performClick()
+        ui.onNodeWithText("도착·전달").performClick()
         ui.onNodeWithText("건넸어요").performClick()
         ui.onNodeWithText("전달 완료").assertIsDisplayed()
-        if(!BuildConfig.IS_VEHICLE) ui.onNodeWithText("외가  ·  방문지 변경").performClick()
+        if(!BuildConfig.IS_VEHICLE) ui.onNodeWithText("방문지 변경").performClick()
         ui.onNodeWithText("친가",useUnmergedTree=true).performClick()
         ui.onNodeWithText("선물 상자").assertIsDisplayed()
         ui.onNodeWithText("과일 바구니").assertDoesNotExist()
@@ -70,7 +70,7 @@ class TripFlowTest {
         ui.onNodeWithText("선물 상자").assertIsDisplayed()
         ui.onNodeWithText("외가",useUnmergedTree=true).performClick()
         ui.onNodeWithText("전달 완료").assertIsDisplayed()
-        ui.onNodeWithText("되돌리기").performClick()
+        ui.onNodeWithText("전달 취소").performClick()
         ui.onNodeWithText("차에 실었어요").assertIsDisplayed()
     }
     @Test fun drivingHidesPhotosAndActions() {

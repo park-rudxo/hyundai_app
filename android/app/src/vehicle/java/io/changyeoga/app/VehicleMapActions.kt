@@ -61,12 +61,12 @@ internal fun VehicleMapActions(stop: Stop, allowed: Boolean) {
         try { action(current) } catch(_:Exception) { message="내비 요청에 실패했습니다. 연결과 권한을 확인해 주세요." }
     }
     Column {
-        Row {
-            OutlinedButton(enabled=allowed&&ready,onClick={request { it.requestNavigationScreen(NavigationScreenRequest.Foreground) }}) { Text("Pleos 지도 열기") }
-            Button(enabled=allowed&&ready&&stop.latitude!=null,onClick={request {
+        Column {
+            CAction("Pleos 지도 열기",enabled=allowed&&ready,onClick={request { it.requestNavigationScreen(NavigationScreenRequest.Foreground) }})
+            CAction("이 방문지로 길 안내",enabled=allowed&&ready&&stop.latitude!=null,onClick={request {
                 it.requestRoute(RouteInfo(latitude=requireNotNull(stop.latitude),longitude=requireNotNull(stop.longitude),displayLatitude=null,displayLongitude=null,poiName=stop.name,poiId="",poiSubId="",address=""))
                 message="경로를 요청했습니다. 내비의 응답을 기다립니다."
-            }}) { Text("이 방문지로 길 안내") }
+            }})
         }
         Text(if(stop.latitude==null) "$message · 휴대폰에서 방문지 위치를 먼저 등록하세요." else message,style=MaterialTheme.typography.bodySmall)
     }

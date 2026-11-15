@@ -48,13 +48,13 @@ internal fun StartupGate(
         Column(
             Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(28.dp),
             verticalArrangement=Arrangement.Center,
-            horizontalAlignment=Alignment.CenterHorizontally,
+            horizontalAlignment=Alignment.Start,
         ) {
-            Text("챙겨가",fontSize=40.sp,fontWeight=FontWeight.Bold,color=MaterialTheme.colorScheme.primary)
+            Text("챙겨가",fontSize=40.sp,fontWeight=FontWeight.Normal,color=MaterialTheme.colorScheme.primary)
             Spacer(Modifier.height(32.dp))
-            if(!failed) CircularProgressIndicator()
+            if(!failed) LinearProgressIndicator(modifier=Modifier.width(80.dp).height(2.dp))
             Spacer(Modifier.height(24.dp))
-            Text(if(failed) "연결을 확인해 주세요" else "장소 검색을 준비하고 있어요",fontSize=23.sp,fontWeight=FontWeight.Bold)
+            Text(if(failed) "연결을 확인해 주세요" else "장소 검색을 준비하고 있어요",fontSize=23.sp,fontWeight=FontWeight.Normal)
             Spacer(Modifier.height(12.dp))
             Text(when {
                 failed -> "검색 서버에 연결하지 못했어요. 다시 시도하거나 먼저 짐을 준비할 수 있어요."
@@ -62,8 +62,8 @@ internal fun StartupGate(
                 else -> "준비되면 자동으로 시작해요."
             },color=MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(32.dp))
-            if(failed) Button(onClick={attempt++},modifier=Modifier.fillMaxWidth().heightIn(min=64.dp)) { Text("다시 시도") }
-            TextButton(onClick={entered=true},modifier=Modifier.fillMaxWidth().heightIn(min=56.dp)) { Text("준비 화면 먼저 열기") }
+            if(failed) CAction("다시 시도",arrow=true){attempt++}
+            CAction("준비 화면 먼저 열기",arrow=true){entered=true}
         }
     }
 }

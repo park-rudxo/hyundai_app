@@ -28,19 +28,21 @@ class SharedPlanActivity:ComponentActivity() {
         super.onSaveInstanceState(outState)
     }
     override fun onCreate(state:Bundle?) {
-        setTheme(android.R.style.Theme_Material_Light_NoActionBar)
+        setTheme(R.style.AppTheme)
         super.onCreate(state)
         WindowCompat.setDecorFitsSystemWindows(window,false)
         val prefs=getSharedPreferences("shared-plan",MODE_PRIVATE)
         val shared=if(intent.action==Intent.ACTION_SEND && intent.type=="text/plain") intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString()?.take(10000).orEmpty() else ""
         val layout=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL;setBackgroundColor(0xFFFAFAF8.toInt()) }
         val scroll=ScrollView(this).apply { addView(layout) };setContentView(scroll)
-        val pad=(20*resources.displayMetrics.density).toInt()
+        WindowCompat.getInsetsController(window,window.decorView).isAppearanceLightStatusBars=true
+        WindowCompat.getInsetsController(window,window.decorView).isAppearanceLightNavigationBars=true
+        val pad=(24*resources.displayMetrics.density).toInt()
         ViewCompat.setOnApplyWindowInsetsListener(scroll) { v,ins -> val b=ins.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime());v.setPadding(pad+b.left,b.top+pad,pad+b.right,b.bottom+pad);ins }
-        fun label(text:String)=TextView(this).apply { this.text=text;textSize=16f;setTextColor(0xFF30383E.toInt());typeface=resources.getFont(R.font.pretendard_regular);setPadding(0,20,0,8);layout.addView(this) }
-        label(if(shared.isNotBlank()) "공유받은 글 확인" else "일정과 공유 메모").textSize=25f
+        fun label(text:String)=TextView(this).apply { this.text=text;cText(14f,true);setPadding(0,pad,pad/4,pad/2);layout.addView(this) }
+        label(if(shared.isNotBlank()) "공유받은 글 확인" else "일정과 공유 메모").apply { cText(26f) }
         label("내용을 확인하고 저장하세요. 날짜·장소는 직접 정해 주세요.")
-        fun field(hint:String,value:String,multi:Boolean=false)=EditText(this).apply { this.hint=hint;setText(value);setSingleLine(!multi);typeface=resources.getFont(R.font.pretendard_regular);layout.addView(this) }
+        fun field(hint:String,value:String,multi:Boolean=false)=EditText(this).apply { id=View.generateViewId();label(hint).labelFor=id;this.hint=hint;setText(value);setSingleLine(!multi);cField();layout.addView(this) }
         val title=field("일정 제목",if(shared.isNotBlank()) shared.lineSequence().firstOrNull().orEmpty().take(80) else prefs.getString("title",intent.getStringExtra("title").orEmpty()).orEmpty())
         val place=field("장소 · 선택",if(shared.isNotBlank()) "" else intent.getStringExtra("place") ?: prefs.getString("place","").orEmpty())
         val notes=field("공유받은 글 또는 메모",shared.ifBlank { prefs.getString("notes","").orEmpty() },true)
@@ -48,15 +50,15 @@ class SharedPlanActivity:ComponentActivity() {
         state?.let { title.setText(it.getString("title"));place.setText(it.getString("place"));notes.setText(it.getString("notes")) }
         notes.minLines=4
         val date=Calendar.getInstance().apply { timeInMillis=state?.getLong("time") ?: prefs.getLong("time",System.currentTimeMillis()) }
-        val dateButton=Button(this)
+        val dateButton=Button(this).apply { cAction() }
         fun updateDate(){selectedTime=date.timeInMillis;dateButton.text=SimpleDateFormat("yyyy년 M월 d일 HH:mm",Locale.KOREA).format(date.time)}
         updateDate();layout.addView(dateButton)
         dateButton.setOnClickListener {
             DatePickerDialog(this,{_,y,m,d -> date.set(y,m,d);TimePickerDialog(this,{_,h,min -> date.set(Calendar.HOUR_OF_DAY,h);date.set(Calendar.MINUTE,min);date.set(Calendar.SECOND,0);updateDate()},date.get(Calendar.HOUR_OF_DAY),date.get(Calendar.MINUTE),true).show()},date.get(Calendar.YEAR),date.get(Calendar.MONTH),date.get(Calendar.DAY_OF_MONTH)).show()
         }
-        label("날짜는 자동 분석하지 않습니다. 표시된 시각을 확인해 주세요.")
+        label("날짜와 시간을 눌러 바꿀 수 있어요.")
         val status=label("")
-        fun action(text:String,run:()->Unit) { layout.addView(Button(this).apply { this.text=text;isAllCaps=false;setTextColor(0xFF426A92.toInt());setBackgroundColor(android.graphics.Color.TRANSPARENT);typeface=resources.getFont(R.font.pretendard_regular);setOnClickListener { run() } }) }
+        fun action(text:String,run:()->Unit) { layout.addView(Button(this).apply { this.text=text;cAction(end=true);setOnClickListener { run() } }) }
         fun save():Boolean {
             if(title.text.isBlank()){status.text="제목을 입력해 주세요.";return false}
             val ok=prefs.edit().putString("title",title.text.toString().take(200)).putString("place",place.text.toString().take(500)).putString("notes",notes.text.toString().take(10000)).putLong("time",date.timeInMillis).commit()
@@ -80,6 +82,5 @@ class SharedPlanActivity:ComponentActivity() {
             }
         }
         action("외출 준비 화면으로") { startActivity(Intent(this,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));finish() }
-        action("닫기") { finish() }
     }
 }

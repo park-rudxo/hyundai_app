@@ -120,14 +120,14 @@ fun TripAssistant(trip: Trip, allowed: Boolean, showControls: Boolean = true, on
     if(allowed && showControls) {
         FlowRow(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)) {
             if(!BuildConfig.IS_VEHICLE) {
-                OutlinedButton(onClick={
+                TextButton(onClick={
                     if(gps) gps=false
                     else permission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION))
                 }) { Text(if(gps) "위치 찾기 중지" else "현재 위치 찾기") }
                 TextButton(onClick={context.startActivity(Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS))}) { Text("위치 설정") }
 
             }
-            OutlinedButton(onClick={
+            TextButton(onClick={
                 tts?.stop()
                 runCatching { voice.launch(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,RecognizerIntent.LANGUAGE_MODEL_FREE_FORM).putExtra(RecognizerIntent.EXTRA_LANGUAGE,"ko-KR").putExtra(RecognizerIntent.EXTRA_PROMPT,"짐 알려줘 / 외가 도착 / 출발 준비")) }
                     .onFailure { message="음성 인식 앱이 없습니다. 방문지 버튼과 ‘짐 읽기’를 이용하세요." }

@@ -70,15 +70,15 @@ fun WirelessTransferDialog(
                     Text("이 화면을 열어 두세요. 시작한 시점의 목록을 한 번 보내며, 이후 수정 내용은 다시 보내야 합니다.")
                     val active = server
                     if(active != null) {
-                        Text("차량에 입력할 주소",fontWeight=FontWeight.Bold)
+                        Text("차량에 입력할 주소",fontWeight=FontWeight.Normal)
                         addresses.forEach { Text("$it:${active.port}") }
-                        Text("연결 코드  ${active.code}",fontWeight=FontWeight.Bold)
+                        Text("연결 코드  ${active.code}",fontWeight=FontWeight.Normal)
                         Text("두 화면에서 비교할 확인 문구")
-                        Text(verificationWords(active.fingerprint),fontWeight=FontWeight.Bold)
+                        Text(verificationWords(active.fingerprint),fontWeight=FontWeight.Normal)
                         Text("5분 동안 유효 · 한 번 전송하면 종료")
-                        OutlinedButton(onClick={active.close();server=null;status="보내기를 종료했습니다."}) { Text("보내기 종료") }
+                        TextButton(onClick={active.close();server=null;status="보내기를 종료했습니다."}) { Text("보내기 종료") }
                     } else {
-                        Button(enabled=!working,onClick={
+                        TextButton(enabled=!working,onClick={
                             working=true; status="목록과 사진을 준비하고 있습니다."
                             scope.launch {
                                 var created: LocalTransferServer? = null
@@ -104,7 +104,7 @@ fun WirelessTransferDialog(
                 } else {
                     OutlinedTextField(value=address,onValueChange={address=it.take(30);pin=null;peer=null},enabled=!working,label={Text("휴대폰 주소:포트")},placeholder={Text("192.168.0.10:12345")},singleLine=true,keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Uri))
                     if(pin == null) {
-                        Button(enabled=!working&&address.isNotBlank(),onClick={
+                        TextButton(enabled=!working&&address.isNotBlank(),onClick={
                             working=true;status="휴대폰을 확인하고 있습니다."
                             scope.launch {
                                 try {
@@ -118,13 +118,13 @@ fun WirelessTransferDialog(
                         }) { Text(if(working) "확인 중" else "휴대폰 확인") }
                     } else {
                         Text("휴대폰과 같은 문구인가요?")
-                        Text(verificationWords(pin!!),fontWeight=FontWeight.Bold)
+                        Text(verificationWords(pin!!),fontWeight=FontWeight.Normal)
                         Text("하나라도 다르면 연결하지 말고 주소를 다시 확인해 주세요.")
                         OutlinedTextField(value=code,onValueChange={code=it.filter(Char::isDigit).take(6)},enabled=!working,label={Text("휴대폰의 연결 코드 6자리")},singleLine=true,keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.NumberPassword))
                         Text("받은 목록으로 현재 방문지·사진·체크 상태를 교체합니다.")
-                        Button(enabled=!working&&code.length==6,onClick={
-                            val target=peer ?: return@Button
-                            val confirmedPin=pin ?: return@Button
+                        TextButton(enabled=!working&&code.length==6,onClick={
+                            val target=peer ?: return@TextButton
+                            val confirmedPin=pin ?: return@TextButton
                             working=true;status="사진과 목록을 받고 있습니다."
                             scope.launch {
                                 var bytes: ByteArray?=null

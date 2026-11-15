@@ -40,20 +40,21 @@ class PlaceMapActivity : FragmentActivity() {
     private var authListener: NaverMapSdk.OnAuthFailedListener? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        setTheme(android.R.style.Theme_Material_Light_NoActionBar)
+        setTheme(R.style.AppTheme)
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window,false)
         WindowCompat.getInsetsController(window,window.decorView).isAppearanceLightStatusBars=true
         WindowCompat.getInsetsController(window,window.decorView).isAppearanceLightNavigationBars=true
-        val layout = LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setBackgroundColor(android.graphics.Color.rgb(245,246,248)); setPadding(24,24,24,24) }
+        val pad=(24*resources.displayMetrics.density).toInt()
+        val layout = LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setBackgroundColor(0xFFFAFAF8.toInt()); setPadding(pad,pad,pad,pad) }
         setContentView(layout)
         ViewCompat.setOnApplyWindowInsetsListener(layout) { view,insets ->
             val bars=insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime())
-            view.setPadding(24+bars.left,24+bars.top,24+bars.right,24+bars.bottom)
+            view.setPadding(pad+bars.left,pad+bars.top,pad+bars.right,pad+bars.bottom)
             insets
         }
         ViewCompat.requestApplyInsets(layout)
-        layout.addView(TextView(this).apply { text="방문지 위치 선택"; textSize=24f })
+        layout.addView(TextView(this).apply { text="장소를 찾아요."; cText(26f);setPadding(0,0,0,pad/2) })
         @Suppress("DEPRECATION")
         val key=packageManager.getApplicationInfo(packageName,PackageManager.GET_META_DATA).metaData?.getString("com.naver.maps.map.NCP_KEY_ID").orEmpty()
         if(key.isBlank()) {
@@ -62,9 +63,9 @@ class PlaceMapActivity : FragmentActivity() {
             return
         }
         locationSource=FusedLocationSource(this,100)
-        val query=EditText(this).apply { hint="장소명 검색 · 예: 수원월드컵경기장";isSingleLine=true }
+        val query=EditText(this).apply { hint="장소명 검색 · 예: 수원월드컵경기장";isSingleLine=true;cField() }
         layout.addView(query)
-        status=TextView(this).apply { text="장소 이름을 입력하세요. 지도에서도 직접 선택할 수 있어요.";textSize=14f;setPadding(0,24,0,24) }
+        status=TextView(this).apply { text="장소 이름을 입력하세요. 지도에서도 직접 선택할 수 있어요.";cText(13f,true);setPadding(0,pad/2,0,pad/2) }
         val sdk=NaverMapSdk.getInstance(this)
         sdk.client=NaverMapSdk.NcpKeyClient(key)
         previousAuthListener=sdk.onAuthFailedListener
@@ -131,17 +132,18 @@ class PlaceMapActivity : FragmentActivity() {
                     resultScroll.visibility=if(places.isEmpty()) View.GONE else View.VISIBLE
                     frame.visibility=if(places.isEmpty()) View.VISIBLE else View.GONE
                     places.forEach { item ->
+                        results.addView(View(this@PlaceMapActivity).apply { setBackgroundColor(0xFFE5E7E7.toInt()) },LinearLayout.LayoutParams(-1,1))
                         results.addView(Button(this@PlaceMapActivity).apply {
                             text="${item.name}\n${item.address}"
                             styleButton(this,false)
                             textSize=17f
                             text=android.text.SpannableString(text).apply {
-                                setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD),0,item.name.length,0)
+                                setSpan(android.text.style.ForegroundColorSpan(0xFF30383E.toInt()),0,item.name.length,0)
                                 setSpan(android.text.style.RelativeSizeSpan(0.82f),item.name.length+1,length,0)
                             }
                             isAllCaps=false
                             gravity=android.view.Gravity.START or android.view.Gravity.CENTER_VERTICAL
-                            minHeight=(64*resources.displayMetrics.density).toInt()
+                            minHeight=(76*resources.displayMetrics.density).toInt()
                             setOnClickListener {
                                 searchJob?.cancel()
                                 resultScroll.visibility=View.GONE
@@ -159,7 +161,7 @@ class PlaceMapActivity : FragmentActivity() {
         }
         confirm.setOnClickListener {
             if(selected==null || authFailed) return@setOnClickListener
-            val nickname=EditText(this).apply { hint="예: 외가, 친구 집 (선택)";setSingleLine(true) }
+            val nickname=EditText(this).apply { hint="예: 외가, 친구 집 (선택)";setSingleLine(true);cField() }
             fun save(name:String) {
                 val point=selected ?: return
                 if(authFailed) return
@@ -170,27 +172,13 @@ class PlaceMapActivity : FragmentActivity() {
                 .setMessage("별명 없이 저장하면 선택한 주소나 장소 이름을 사용해요.")
                 .setView(nickname).setPositiveButton("저장") { _,_ -> save(nickname.text.toString().trim().ifBlank { placeName }) }
                 .setNeutralButton("별명 없이 저장") { _,_ -> save(placeName) }
-                .setNegativeButton("취소",null).show()
+                .setNegativeButton("취소",null).create().also { dialog ->
+                    dialog.setOnShowListener { listOf(-1,-2,-3).forEach { dialog.getButton(it)?.apply { cText(15f);setTextColor(0xFF426A92.toInt()) } } }
+                    dialog.show()
+                }
         }
     }
-    private fun styleButton(button:Button,primary:Boolean) {
-        val density=resources.displayMetrics.density
-        button.typeface=resources.getFont(R.font.pretendard_semibold)
-        button.isAllCaps=false
-        button.minHeight=(60*density).toInt()
-        button.setPadding((16*density).toInt(),(12*density).toInt(),(16*density).toInt(),(12*density).toInt())
-        button.background=android.graphics.drawable.GradientDrawable().apply {
-            cornerRadius=12*density
-            setColor(if(primary) android.graphics.Color.rgb(49,94,232) else android.graphics.Color.WHITE)
-        }
-        button.backgroundTintList=android.content.res.ColorStateList(
-            arrayOf(intArrayOf(-android.R.attr.state_enabled),intArrayOf()),
-            intArrayOf(android.graphics.Color.rgb(225,229,237),if(primary) android.graphics.Color.rgb(49,94,232) else android.graphics.Color.WHITE))
-        button.setTextColor(android.content.res.ColorStateList(
-            arrayOf(intArrayOf(-android.R.attr.state_enabled),intArrayOf()),
-            intArrayOf(android.graphics.Color.rgb(89,97,109),if(primary) android.graphics.Color.WHITE else android.graphics.Color.rgb(23,27,34))))
-        button.layoutParams=LinearLayout.LayoutParams(-1,-2).apply { topMargin=(8*density).toInt() }
-    }
+    private fun styleButton(button:Button,primary:Boolean) { button.cAction(end=primary) }
     private fun choose(point: LatLng, name:String?=null, address:String?=null) {
         if(authFailed) return
         placeName=name ?: "선택한 장소"
