@@ -9,3 +9,5 @@ captures/
 
 server/secrets.local.json
 server/__pycache__/
+
+**/.kotlin/

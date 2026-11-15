@@ -15,6 +15,9 @@ import com.naver.maps.geometry.LatLng
 import com.naver.maps.map.*
 import com.naver.maps.map.overlay.Marker
 import com.naver.maps.map.util.FusedLocationSource
+import androidx.core.widget.doAfterTextChanged
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -29,6 +32,7 @@ class PlaceMapActivity : FragmentActivity() {
     private lateinit var status: TextView
     private lateinit var confirm: Button
     private var queryVersion = 0
+    private var searchJob: Job? = null
     private var authFailed = false
     private var placeName = "선택한 장소"
     private var previousAuthListener: NaverMapSdk.OnAuthFailedListener? = null
@@ -71,8 +75,9 @@ class PlaceMapActivity : FragmentActivity() {
             }
         }
         sdk.onAuthFailedListener=authListener
-        val search=Button(this).apply { text="장소 찾기" }
-        layout.addView(search)
+        val results=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
+        val resultScroll=ScrollView(this).apply { addView(results); visibility=View.GONE }
+        layout.addView(resultScroll,LinearLayout.LayoutParams(-1,0,1f))
         layout.addView(status)
         val frame=FrameLayout(this).apply { id=R.id.visit_map_container }
         layout.addView(frame,LinearLayout.LayoutParams(-1,0,1f))
@@ -86,31 +91,52 @@ class PlaceMapActivity : FragmentActivity() {
             map.locationSource=locationSource
             map.uiSettings.isLocationButtonEnabled=true
             map.locationTrackingMode=LocationTrackingMode.Follow
-            map.setOnMapClickListener { _, point -> queryVersion++; choose(point) }
+            map.setOnMapClickListener { _, point -> searchJob?.cancel(); resultScroll.visibility=View.GONE; queryVersion++; choose(point) }
             val lat=savedInstanceState?.getDouble("latitude") ?: intent.getDoubleExtra("latitude",Double.NaN)
             val lon=savedInstanceState?.getDouble("longitude") ?: intent.getDoubleExtra("longitude",Double.NaN)
             if(lat.isFinite() && lon.isFinite()) choose(LatLng(lat,lon),savedInstanceState?.getString("placeName") ?: intent.getStringExtra("name"))
         }
-        search.setOnClickListener {
-            val address=query.text.toString().trim()
-            if(address.isEmpty()) { status.text="장소명이나 주소를 입력해 주세요.";return@setOnClickListener }
+        query.doAfterTextChanged {
+            val address=it.toString().trim()
             val request=++queryVersion
-            search.isEnabled=false
+            searchJob?.cancel()
+            results.removeAllViews()
+            resultScroll.visibility=View.GONE
+            frame.visibility=View.VISIBLE
+            selected=null
+            marker.map=null
+            confirm.isEnabled=false
+            if(address.length<2) {
+                status.text="장소명을 두 글자 이상 입력하거나 지도를 눌러 주세요."
+                return@doAfterTextChanged
+            }
             status.text="장소를 찾고 있어요…"
-            lifecycleScope.launch {
+            searchJob=lifecycleScope.launch {
+                delay(350)
                 val result=withContext(Dispatchers.IO) { runCatching { PlaceSearch.find(address) } }
-                search.isEnabled=true
                 if(request!=queryVersion || isFinishing || isDestroyed) return@launch
                 result.fold(onSuccess={ places ->
-                    if(places.isEmpty()) status.text="검색 결과가 없어요. 지역을 함께 입력하거나 지도에서 선택해 주세요."
-                    else android.app.AlertDialog.Builder(this@PlaceMapActivity)
-                        .setTitle("방문할 장소 선택 · 네이버 검색")
-                        .setItems(places.map { "${it.name}\n${it.address}" }.toTypedArray()) { _, index ->
-                            val item=places[index]
-                            choose(LatLng(item.latitude,item.longitude),item.name,item.address)
-                        }.setNegativeButton("취소",null).show()
+                    status.text=if(places.isEmpty()) "검색 결과가 없어요. 지역을 함께 입력해 주세요." else "검색 결과 · 장소를 눌러 선택하세요"
+                    resultScroll.visibility=if(places.isEmpty()) View.GONE else View.VISIBLE
+                    frame.visibility=if(places.isEmpty()) View.VISIBLE else View.GONE
+                    places.forEach { item ->
+                        results.addView(Button(this@PlaceMapActivity).apply {
+                            text="${item.name}\n${item.address}"
+                            isAllCaps=false
+                            gravity=android.view.Gravity.START or android.view.Gravity.CENTER_VERTICAL
+                            minHeight=(64*resources.displayMetrics.density).toInt()
+                            setOnClickListener {
+                                searchJob?.cancel()
+                                resultScroll.visibility=View.GONE
+                                frame.visibility=View.VISIBLE
+                                query.clearFocus()
+                                (getSystemService(INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).hideSoftInputFromWindow(query.windowToken,0)
+                                choose(LatLng(item.latitude,item.longitude),item.name,item.address)
+                            }
+                        })
+                    }
                 },onFailure={
-                    status.text=if(BuildConfig.PLACE_SEARCH_URL.isBlank()) "장소 검색 서버 연결 준비 중이에요. 지도에서 직접 선택할 수 있어요." else "장소 검색에 연결하지 못했어요. 잠시 후 다시 시도하거나 지도에서 선택해 주세요."
+                    status.text="검색 서버가 응답하지 않아요. 잠시 후 글자를 수정해 다시 검색하거나 지도에서 선택해 주세요."
                 })
             }
         }

@@ -25,7 +25,7 @@ class PlaceSearchConnectionTest {
     fun all(v:View):List<View> = listOf(v)+if(v is ViewGroup)(0 until v.childCount).flatMap { all(v.getChildAt(it)) } else emptyList()
     val views=all(activity.window.decorView)
     views.filterIsInstance<EditText>().first().setText("수원월드컵경기장")
-    views.filterIsInstance<Button>().first { it.text=="장소 찾기" }.performClick()
+    check(views.filterIsInstance<Button>().none { it.text=="장소 찾기" })
    }
    var found=false
    repeat(20) {
