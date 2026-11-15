@@ -52,7 +52,7 @@ class MainActivity: ComponentActivity() {
             navigationBarStyle=if(BuildConfig.IS_VEHICLE) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT) else SystemBarStyle.light(android.graphics.Color.TRANSPARENT,android.graphics.Color.TRANSPARENT),
         )
         setContent {
-            MaterialTheme(colorScheme = if(BuildConfig.IS_VEHICLE) darkColorScheme(primary=Mint,background=Ink,surface=Panel,onSurface=Color.White,onPrimary=Ink) else lightColorScheme(primary=Color(0xFF315EE8),onPrimary=Color.White,background=Color(0xFFF5F6F8),surface=Color.White,surfaceVariant=Color(0xFFEBEEF4),onSurface=Color(0xFF171B22),onBackground=Color(0xFF171B22),onSurfaceVariant=Color(0xFF59616D)), shapes=Shapes(small=RoundedCornerShape(12.dp),medium=RoundedCornerShape(16.dp),large=RoundedCornerShape(20.dp),extraLarge=RoundedCornerShape(20.dp))) {
+            MaterialTheme(colorScheme = if(BuildConfig.IS_VEHICLE) darkColorScheme(primary=Mint,background=Ink,surface=Panel,onSurface=Color.White,onPrimary=Ink) else lightColorScheme(primary=Color(0xFF315EE8),onPrimary=Color.White,background=Color(0xFFF5F6F8),surface=Color.White,surfaceVariant=Color(0xFFEBEEF4),onSurface=Color(0xFF171B22),onBackground=Color(0xFF171B22),onSurfaceVariant=Color(0xFF59616D)), typography=appTypography(), shapes=Shapes(small=RoundedCornerShape(12.dp),medium=RoundedCornerShape(12.dp),large=RoundedCornerShape(16.dp),extraLarge=RoundedCornerShape(16.dp))) {
                 val density=LocalDensity.current
                 val scale=if(BuildConfig.IS_VEHICLE) (LocalConfiguration.current.screenWidthDp / 1000f).coerceIn(1f,1.5f) else 1f
                 CompositionLocalProvider(LocalDensity provides Density(density.density*scale,density.fontScale)) {

@@ -35,12 +35,12 @@ internal fun PhonePreparation(
     Surface(Modifier.fillMaxSize(),color=MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(20.dp)) {
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
-                if(step>0) TextButton(onClick={onStep(step-1)},enabled=!busy) { Text("‹ 이전") }
+                if(step>0) TextButton(onClick={onStep(step-1)},enabled=!busy) { AppSymbol(R.drawable.symbol_arrow_back); Spacer(Modifier.width(4.dp)); Text("이전") }
                 Text("챙겨가  ·  ${step+1}/5",Modifier.padding(top=12.dp),color=MaterialTheme.colorScheme.primary)
-                TextButton(onClick=onTools,enabled=!busy) { Text("파일·새 외출") }
+                TextButton(onClick=onTools,enabled=!busy) { AppSymbol(R.drawable.symbol_more_horiz); Spacer(Modifier.width(4.dp)); Text("파일·새 외출") }
             }
             LinearProgressIndicator(progress={(step+1)/5f},modifier=Modifier.fillMaxWidth().padding(top=8.dp,bottom=24.dp))
-            Text(titles[step],fontSize=28.sp,fontWeight=FontWeight.Bold)
+            Text(titles[step],style=MaterialTheme.typography.headlineMedium)
             if(error.isNotBlank()) Text(error,color=MaterialTheme.colorScheme.error)
             if(loadFailed) { Text("저장된 목록을 확인할 수 없어요.");TextButton(onClick=onTools){Text("파일·새 외출")};return@Column }
             assistant()
@@ -50,15 +50,19 @@ internal fun PhonePreparation(
                         item { Text(if(trip.stops.isEmpty()) "들를 곳을 찾은 다음, 가져갈 짐을 담아요." else "방문지 ${trip.stops.size}곳을 정했어요. 사진 등록으로 넘어가세요.") }
                         items(trip.stops,key={it.id}) { destination ->
                             Card(onClick={onMap(destination)},colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),modifier=Modifier.fillMaxWidth()) {
-                                Column(Modifier.padding(20.dp)) {
-                                    Text(destination.name,fontSize=20.sp,fontWeight=FontWeight.Bold)
-                                    Text("눌러서 위치 변경",color=MaterialTheme.colorScheme.onSurfaceVariant)
+                                Row(Modifier.padding(16.dp),horizontalArrangement=Arrangement.spacedBy(12.dp)) {
+                                    AppSymbol(R.drawable.symbol_location_on)
+                                    Column(Modifier.weight(1f)) {
+                                    Text(destination.name,style=MaterialTheme.typography.titleMedium)
+                                    Text("눌러서 위치 변경",style=MaterialTheme.typography.bodyMedium,color=MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    AppSymbol(R.drawable.symbol_edit)
                                 }
                             }
                         }
                         item {
                             if(trip.stops.isEmpty()) LargeAction("지도에서 첫 방문지 찾기",!busy){onMap(null)}
-                            else OutlinedButton(onClick={onMap(null)},modifier=Modifier.fillMaxWidth().heightIn(min=56.dp),shape=RoundedCornerShape(16.dp)) { Text("+ 지도에서 방문지 찾기") }
+                            else OutlinedButton(onClick={onMap(null)},modifier=Modifier.fillMaxWidth().heightIn(min=56.dp),shape=RoundedCornerShape(12.dp)) { AppSymbol(R.drawable.symbol_add); Spacer(Modifier.width(8.dp)); Text("지도에서 방문지 찾기") }
                         }
                         if(trip.stops.isEmpty()) item { TextButton(onClick=onExample) { Text("예시로 둘러보기") } }
                     }
@@ -73,8 +77,8 @@ internal fun PhonePreparation(
                     }
                     else -> {
                         item { OutlinedButton(onClick={chooseStop=true},modifier=Modifier.fillMaxWidth().heightIn(min=64.dp)) { Text("${stop?.name.orEmpty()}  ·  방문지 변경",fontSize=17.sp) } }
-                        if(step==1) item { OutlinedButton(onClick={choosePhoto=true},modifier=Modifier.fillMaxWidth().heightIn(min=60.dp),shape=RoundedCornerShape(16.dp)) { Text("짐 사진 추가") } }
-                        if(step==2) item { Text("총 ${trip.items.size}개 중 ${trip.items.count { it.state!=ItemState.READY }}개 실었어요",fontWeight=FontWeight.Bold) }
+                        if(step==1) item { OutlinedButton(onClick={choosePhoto=true},modifier=Modifier.fillMaxWidth().heightIn(min=56.dp),shape=RoundedCornerShape(12.dp)) { Text("짐 사진 추가") } }
+                        if(step==2) item { Text("총 ${trip.items.size}개 중 ${trip.items.count { it.state!=ItemState.READY }}개 실었어요",fontWeight=FontWeight.SemiBold) }
                         if(luggage.isEmpty()) item { Text("이곳에 가져갈 짐을 사진으로 추가하세요.") }
                         items(if(step==2) luggage.sortedBy { it.state!=ItemState.READY } else luggage,key={it.id}) { item ->
                             ItemCard(item,store,step==4,!busy,showActions=step!=1,onState={onState(item.id,it)},onDelete={onDelete(item)})
@@ -105,7 +109,7 @@ internal fun PhonePreparation(
 
 @Composable
 private fun LargeAction(label:String,enabled:Boolean=true,onClick:()->Unit) {
-    Button(onClick=onClick,enabled=enabled,modifier=Modifier.fillMaxWidth().heightIn(min=60.dp),shape=RoundedCornerShape(16.dp),contentPadding=PaddingValues(16.dp)) {
-        Text(label,fontSize=18.sp,fontWeight=FontWeight.Bold)
+    Button(onClick=onClick,enabled=enabled,modifier=Modifier.fillMaxWidth().heightIn(min=56.dp),shape=RoundedCornerShape(12.dp),contentPadding=PaddingValues(16.dp)) {
+        Text(label,style=MaterialTheme.typography.labelLarge)
     }
 }

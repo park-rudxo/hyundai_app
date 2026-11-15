@@ -47,7 +47,7 @@ class TripFlowTest {
         if(BuildConfig.IS_VEHICLE) return
         ui.onNodeWithText("예시로 둘러보기").performClick()
         ui.onNodeWithText("1 방문지 정하기").assertDoesNotExist()
-        ui.onNodeWithText("+ 지도에서 방문지 찾기").assertIsDisplayed()
+        ui.onNodeWithText("지도에서 방문지 찾기").assertIsDisplayed()
         ui.onNodeWithText("다음 · 짐 사진 등록").performClick()
         ui.onNodeWithText("짐 사진 추가").performClick()
         ui.onNodeWithText("촬영").assertIsDisplayed()

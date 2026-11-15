@@ -100,6 +100,11 @@ class PlaceMapActivity : FragmentActivity() {
             val lon=savedInstanceState?.getDouble("longitude") ?: intent.getDoubleExtra("longitude",Double.NaN)
             if(lat.isFinite() && lon.isFinite()) choose(LatLng(lat,lon),savedInstanceState?.getString("placeName") ?: intent.getStringExtra("name"))
         }
+        fun applyFont(view:View) {
+            if(view is TextView) view.typeface=resources.getFont(R.font.pretendard_regular)
+            if(view is android.view.ViewGroup) for(i in 0 until view.childCount) applyFont(view.getChildAt(i))
+        }
+        applyFont(layout)
         query.doAfterTextChanged {
             val address=it.toString().trim()
             if(address==lastQuery) return@doAfterTextChanged
@@ -170,11 +175,12 @@ class PlaceMapActivity : FragmentActivity() {
     }
     private fun styleButton(button:Button,primary:Boolean) {
         val density=resources.displayMetrics.density
+        button.typeface=resources.getFont(R.font.pretendard_semibold)
         button.isAllCaps=false
         button.minHeight=(60*density).toInt()
         button.setPadding((16*density).toInt(),(12*density).toInt(),(16*density).toInt(),(12*density).toInt())
         button.background=android.graphics.drawable.GradientDrawable().apply {
-            cornerRadius=16*density
+            cornerRadius=12*density
             setColor(if(primary) android.graphics.Color.rgb(49,94,232) else android.graphics.Color.WHITE)
         }
         button.backgroundTintList=android.content.res.ColorStateList(
