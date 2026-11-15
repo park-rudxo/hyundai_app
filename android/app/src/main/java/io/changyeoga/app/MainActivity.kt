@@ -55,7 +55,10 @@ class MainActivity: ComponentActivity() {
             MaterialTheme(colorScheme = darkColorScheme(primary=Mint,background=Ink,surface=Panel,onSurface=Color.White,onPrimary=Ink)) {
                 val density=LocalDensity.current
                 val scale=if(BuildConfig.IS_VEHICLE) (LocalConfiguration.current.screenWidthDp / 1000f).coerceIn(1f,1.5f) else 1f
-                CompositionLocalProvider(LocalDensity provides Density(density.density*scale,density.fontScale)) { App(allowed,signal) }
+                CompositionLocalProvider(LocalDensity provides Density(density.density*scale,density.fontScale)) {
+                    if(BuildConfig.IS_VEHICLE) App(allowed,signal)
+                    else StartupGate { App(allowed,signal) }
+                }
             }
         }
     }

@@ -13,6 +13,11 @@ import org.junit.Test
 class TripFlowTest {
     @get:Rule val ui=createAndroidComposeRule<MainActivity>()
     @Before fun reset() {
+        if(!BuildConfig.IS_VEHICLE) {
+            ui.waitForIdle()
+            if(ui.onAllNodesWithText("준비 화면 먼저 열기").fetchSemanticsNodes().isNotEmpty())
+                ui.onNodeWithText("준비 화면 먼저 열기").performClick()
+        }
         ui.onNodeWithText(if(BuildConfig.IS_VEHICLE) "더보기" else "파일·새 외출").performClick()
         ui.onNodeWithText("새 외출").performClick()
         ui.onNodeWithText("초기화").performClick()
