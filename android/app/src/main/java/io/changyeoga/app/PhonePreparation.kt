@@ -19,6 +19,7 @@ internal fun PhonePreparation(
     onSelect:(String)->Unit, onPhoto:(Boolean)->Unit, onState:(String,ItemState)->Unit,
     onDelete:(Luggage)->Unit, onSend:()->Unit, onReset:()->Unit, assistant:@Composable ()->Unit,
 ) {
+    val planContext=androidx.compose.ui.platform.LocalContext.current
     var chooseStop by remember { mutableStateOf(false) }
     var choosePhoto by remember { mutableStateOf(false) }
     val titles=listOf("어디에 들르나요?","무엇을 가져가나요?","차에 실었나요?","차량으로 보내세요","도착하면 건네주세요")
@@ -47,6 +48,10 @@ internal fun PhonePreparation(
             LazyColumn(Modifier.weight(1f).fillMaxWidth(),verticalArrangement=Arrangement.spacedBy(16.dp),contentPadding=PaddingValues(vertical=24.dp)) {
                 when(step) {
                     0 -> {
+                        item { TextButton(onClick={
+                            planContext.startActivity(android.content.Intent().setClassName(planContext,"io.changyeoga.app.SharedPlanActivity")
+                                .putExtra("title","외출 준비").putExtra("place",trip.stops.joinToString(" → "){it.name}))
+                        }) { Text("Google 캘린더 · 공유 메모 →") } }
                         item { Text(if(trip.stops.isEmpty()) "들를 곳을 찾은 다음, 가져갈 짐을 담아요." else "방문지 ${trip.stops.size}곳을 정했어요. 사진 등록으로 넘어가세요.") }
                         items(trip.stops,key={it.id}) { destination ->
                             Card(onClick={onMap(destination)},colors=CardDefaults.cardColors(containerColor=MaterialTheme.colorScheme.surface),modifier=Modifier.fillMaxWidth()) {

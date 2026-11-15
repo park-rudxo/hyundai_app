@@ -2,5 +2,8 @@
     <application>
         <meta-data android:name="com.naver.maps.map.NCP_KEY_ID" android:value="${naverMapKey}" />
         <activity android:name=".PlaceMapActivity" android:exported="false" />
+        <activity android:name=".SharedPlanActivity" android:exported="true" android:windowSoftInputMode="adjustResize">
+            <intent-filter><action android:name="android.intent.action.SEND"/><category android:name="android.intent.category.DEFAULT"/><data android:mimeType="text/plain"/></intent-filter>
+        </activity>
     </application>
 </manifest>
