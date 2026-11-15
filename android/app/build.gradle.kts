@@ -24,8 +24,8 @@ android {
         applicationId = "io.changyeoga.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 14
-        versionName = "0.9.1"
+        versionCode = 15
+        versionName = "0.9.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["naverMapKey"] = naverMapKey
         buildConfigField("String", "PLACE_SEARCH_URL", "\"${placeSearchUrl}\"")

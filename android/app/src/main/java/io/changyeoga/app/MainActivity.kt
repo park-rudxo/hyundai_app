@@ -374,7 +374,7 @@ private fun App(vehicleAllowed: Boolean, signal: String) {
         }
     },confirmButton={TextButton(onClick={tools=false}){Text("닫기")}})
     if(addStop && allowed) AlertDialog(onDismissRequest={addStop=false},title={Text("방문지 추가")},text={OutlinedTextField(value=stopName,onValueChange={stopName=it.take(30)},label={Text("예: 외가, 친구 집")},singleLine=true,modifier=Modifier.testTag("stopName"))},confirmButton={TextButton(enabled=stopName.isNotBlank(),onClick={commit(trip.addStop(stopName));stopName="";addStop=false}){Text("추가")}},dismissButton={TextButton(onClick={addStop=false}){Text("취소")}})
-    if(reset && allowed) AlertDialog(onDismissRequest={reset=false},title={Text("새 외출을 준비할까요?")},text={Text("현재 방문지, 짐과 사진이 이 기기에서 삭제됩니다.")},confirmButton={TextButton(enabled=!busy,onClick={val previous=trip; commit(Trip());if(trip==Trip()){previous.items.forEach{store.deletePhoto(it.photo)};loadFailed=false;delivery=false;step=0};reset=false}){Text("초기화")}},dismissButton={TextButton(onClick={reset=false}){Text("취소")}})
+    if(reset && allowed) AlertDialog(onDismissRequest={reset=false},title={Text("새 외출을 준비할까요?")},text={Text("현재 방문지, 짐과 사진이 이 기기에서 삭제됩니다.")},confirmButton={TextButton(enabled=!busy,onClick={val previous=trip; commit(Trip());if(trip==Trip()){runCatching { DepartureCheckStore(context).clear() };previous.items.forEach{store.deletePhoto(it.photo)};loadFailed=false;delivery=false;step=0};reset=false}){Text("초기화")}},dismissButton={TextButton(onClick={reset=false}){Text("취소")}})
 }
 
 @Composable

@@ -78,6 +78,7 @@ internal fun PhonePreparation(
                     else -> {
                         item { OutlinedButton(onClick={chooseStop=true},modifier=Modifier.fillMaxWidth().heightIn(min=64.dp)) { Text("${stop?.name.orEmpty()}  ·  방문지 변경",fontSize=17.sp) } }
                         if(step==1) item { OutlinedButton(onClick={choosePhoto=true},modifier=Modifier.fillMaxWidth().heightIn(min=56.dp),shape=RoundedCornerShape(12.dp)) { Text("짐 사진 추가") } }
+                        if(step==2) item { DepartureCheck(!busy) }
                         if(step==2) item { Text("총 ${trip.items.size}개 중 ${trip.items.count { it.state!=ItemState.READY }}개 실었어요",fontWeight=FontWeight.SemiBold) }
                         if(luggage.isEmpty()) item { Text("이곳에 가져갈 짐을 사진으로 추가하세요.") }
                         items(if(step==2) luggage.sortedBy { it.state!=ItemState.READY } else luggage,key={it.id}) { item ->
