@@ -1,33 +1,50 @@
-# 휴대폰 검색 연결을 위한 배포
+# 검색 서버 배포와 앱 연결
 
-현재 앱 연결 코드는 준비됐지만 인터넷 서버는 아직 배포하지 않았습니다. 로컬 검증 APK는 adb reverse 연결이 있어야 동작합니다. 이 APK를 그대로 휴대폰 배포용으로 제공하지 않습니다.
+현재 앱은 Render에 배포한 `https://hyundai-app-xc7k.onrender.com`을 사용합니다. 아래 절차는 새 서버 배포 또는 재배포를 위한 안내입니다.
 
-## Docker 호스팅 설정
+## Render Docker 설정
 
-Docker Web Service를 지원하는 호스팅에 이 저장소를 연결합니다. 서비스 생성·요금제 선택은 본인 계정에서 진행하고 요금을 확인하세요.
+| 항목 | 설정 |
+|---|---|
+| 서비스 | Docker Web Service |
+| 저장소 | park-rudxo/hyundai_app |
+| Root Directory | `server` |
+| Dockerfile Path | `Dockerfile` |
+| API 인증 환경변수 | `NAVER_API_HUB_CLIENT_ID`, `NAVER_API_HUB_CLIENT_SECRET` |
+| 수신 주소 | 이미지 기본값 `BIND_HOST=0.0.0.0` |
+| 포트 | 플랫폼의 `PORT` 값, 미지정 시 8080 |
 
-- 빌드 컨텍스트/Root Directory: server
-- Dockerfile: Dockerfile
-- 환경변수: NAVER_API_HUB_CLIENT_ID, NAVER_API_HUB_CLIENT_SECRET (콘솔의 비공개 환경변수에 입력)
-- BIND_HOST: 0.0.0.0
-- PORT: 호스팅이 지정하는 값 (미지정 시 8080)
+1. Render에서 GitHub 저장소를 연결하고 위 설정으로 서비스를 만듭니다.
+2. API 인증정보는 Render의 비공개 환경변수에 등록합니다.
+3. 배포 후 `https://서비스주소/health`를 확인합니다.
+4. `/places?q=수원월드컵경기장`에서 실제 검색 결과를 확인합니다.
+5. 요금제·절전 정책·요청량을 운영 환경에 맞게 관리합니다.
 
-Docker 이미지에는 place_search.py만 복사합니다. 로컬 키 파일은 업로드하지 않습니다. HTTPS 주소가 생성되면 /places?q=수원월드컵경기장 으로 검색 결과를 확인합니다. 외부 공개 전 프록시의 요청 속도 제한을 설정하세요.
+Docker 이미지에는 `place_search.py`만 들어갑니다. 로컬 인증 파일은 복사하지 않습니다. 서버는 Python 표준 라이브러리만 사용합니다.
 
-## 앱 빌드
+## 앱에 연결
 
-android/local.properties에 `PLACE_SEARCH_URL=https://발급된서버주소`를 입력하고 APK를 다시 빌드합니다. 끝에 /places는 붙이지 않습니다. 앱은 Secret을 포함하지 않고 중계 서버만 호출합니다.
+`android/local.properties`에 기본 주소를 설정하고 휴대폰 APK를 다시 빌드합니다.
 
-## 로컬 검증
+```properties
+PLACE_SEARCH_URL=https://hyundai-app-xc7k.onrender.com
+```
 
-`python server/place_search.py` 실행 후 `adb reverse tcp:8080 tcp:8080`을 설정합니다. 개발용 PLACE_SEARCH_URL=http://127.0.0.1:8080 을 사용합니다. HTTP는 debug의 localhost에만 허용합니다. 이 연결은 PC가 꺼지거나 USB/ADB 연결이 끊기면 작동하지 않습니다.
+주소 끝에 `/places`는 붙이지 않습니다. 앱에는 API Secret을 넣지 않습니다. 지도용 `NAVER_MAP_CLIENT_ID`는 별도로 설정합니다. [전체 앱 설정](../android/README.md)
 
-## Render에서 만드는 경우
+## 로컬 에뮬레이터 연결
 
-1. https://dashboard.render.com 에 가입/로그인하고 GitHub 저장소 접근을 연결합니다.
-2. New → Web Service에서 hyundai_app 저장소를 선택합니다.
-3. Root Directory는 server, Language는 Docker, Dockerfile Path는 Dockerfile로 지정합니다.
-4. 위 두 인증 환경변수를 입력하고 서비스 요금제를 확인해 배포합니다.
-5. 생성된 HTTPS 주소의 /health가 {"ok":true}인지 확인합니다. HTTPS 주소만 개발자에게 전달합니다. 키는 전달하지 않습니다.
+저장소 루트에서:
 
-공식 Docker 배포 안내: https://render.com/docs/docker
+```powershell
+python server/place_search.py
+adb reverse tcp:8080 tcp:8080
+```
+
+로컬 시험 APK의 `PLACE_SEARCH_URL`은 `http://127.0.0.1:8080`으로 설정합니다. HTTP는 debug의 localhost에만 허용됩니다. 이 방식은 개발 PC와 ADB 연결이 있을 때 사용하며, 휴대폰 배포용 APK에는 HTTPS 서버 주소를 사용합니다.
+
+## 갱신 후 확인
+
+서버 코드 변경은 호스팅에 재배포합니다. 인증정보 변경은 비공개 환경변수에서 처리합니다. 앱의 서버 주소를 바꾸면 APK도 다시 빌드합니다. `/health` 응답과 실제 `/places` 응답을 각각 확인하세요.
+
+[Render 공식 Docker 안내](https://render.com/docs/docker) · [서버 API](README.md)

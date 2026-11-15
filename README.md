@@ -1,54 +1,72 @@
-# 현대자동차그룹 차량용 앱 개발 공모전
+# 챙겨가
 
-Pleos 차량용 앱 공모전을 준비하며 공식 기능, 개발 환경, 기획 자료를 정리하는 저장소입니다.
+챙기려던 물건을 잊지 않도록, 휴대폰에서 준비물을 등록하고 차량에서 적재와 전달을 확인하는 Pleos 차량용 앱입니다.
 
-**개인 참가 · 챙겨가 첫 실행 버전 개발 · 1차 접수 2026.11.15**
+**현재 버전 0.10.0 · 업데이트 2026.11.15**
 
-최근 정리: 2026.11.15
+[휴대폰 APK](apk/changyeoga-phone-debug.apk) · [차량 APK](apk/changyeoga-vehicle-debug.apk) · [차량 화면 시연용 APK](apk/changyeoga-demo-debug.apk) · [시연 영상](docs/media/changyeoga-demo-0.10.0.mp4)
 
-## 지금 하는 일
+## 사용 흐름
 
-**C 디자인을 실제 앱에 적용했습니다(휴대폰·차량·시연 0.10.0).** 밝은 중성 배경, 얇은 구분선, 가벼운 글자와 채움 없는 블루 행동을 사용합니다. 폰은 단계별 준비, 차량은 왼쪽 방문지·오른쪽 준비물로 구성했습니다. 지도·공유 메모·캘린더·로딩·연결 창에도 같은 스타일을 적용했습니다. [디자인 기준](docs/design/DESIGN-SYSTEM.md) · [APK 설치](apk/README.md)
+**방문지 찾기 → 준비물 사진 등록 → 적재 확인 → 차량으로 보내기 → 전달 확인**
 
-**사진으로 등록한 짐을 방문지와 연결하고, 출발 준비와 도착 후 전달을 확인하는 ‘챙겨가’(가칭)를 기획합니다.** [기존 서비스 조사](docs/04-idea-selection.md)
-
-- [공식 양식에 작성한 기획서 초안](deliverables/챙겨가_공모전_기획서_초안.docx) · [모바일에서 읽는 기획 내용](docs/15-proposal-draft.md)
-- 개인정보·동의·서명은 비워 두었습니다. 작성 후 개인정보가 포함된 제출본은 개인 기기에 보관합니다.
-- [앱 소스·빌드·실행 방법](android/README.md) · [개발 및 검증 기록](docs/16-development-log.md) · [개발용 APK](apk/README.md)
-- 구현: 방문지별 사진 등록, 적재·전달·되돌리기, 기기 내 저장, 같은 네트워크에서 휴대폰→차량 일회 전송, 휴대폰 GPS 도착 후보 안내와 확인형 음성 명령(0.4.0). 실제 차량용 P단·UX 제한 읽기 확인.
-- 휴대폰 UI: 방문지 → 사진 → 적재 → 차량 전송 → 전달의 단계형 진행. 위치는 GPS·네트워크 동시 요청과 수신 상태 안내를 추가했습니다.
-- 다음 작업: 실제 두 기기 전송 시험, 내비 자동 도착, 출발 전 예약 알림. 무선 전송은 AVD 내부에서 검증했으며 지속 동기화는 아닙니다. 차량 방문지는 직접 선택하며, 휴대폰은 화면을 켠 동안 GPS로 근처 방문지를 안내합니다.
-- 실제 앱 화면을 녹화한 시연 영상을 제출자료에 포함했습니다. 현재 배포 APK는 debug 개발 빌드입니다.
-- 차멀미는 출품 후보에서 제외했습니다. [이전 조사 기록](docs/14-motion-sickness.md)
-
-## 조사 자료
-
-| 찾는 내용 | 바로 보기 |
+| 기능 | 사용 방법 |
 |---|---|
-| **Pleos 앱마켓에 어떤 앱이 있나?** | [확인한 앱·서비스와 아직 모르는 목록](docs/12-pleos-app-market.md) |
-| 현대차·Tesla·중국 업체 앱은 무엇을 하나? | [공식 기능 비교표와 앱스토어 링크](docs/11-official-app-feature-map.md) |
-| Pleos에서 어떤 기능을 개발할 수 있나? | [SDK·API 제공 범위](docs/08-pleos-apis.md) |
+| 장소 찾기 | 네이버 지도에서 장소명을 검색하고 위치를 선택합니다. 별명은 선택해서 붙입니다. |
+| 준비물 등록 | 사진을 방문지에 연결하고, 눌러서 크게 확인합니다. |
+| 적재·전달 확인 | 차에 넣으면 ‘실었어요’, 건네면 ‘건넸어요’를 눌러 기록합니다. |
+| 출발 전 집안 확인 | 가스레인지를 직접 확인한 뒤 확인 시각을 저장합니다. |
+| 차량 연결 | 같은 Wi-Fi에서 목록과 사진을 일회 전송하거나 ZIP 파일로 옮깁니다. |
+| 공유 메모·일정 | 다른 앱의 글을 공유받아 메모로 저장하고 Google 캘린더 일정 작성 화면으로 보냅니다. |
+| 차량 조작 제한 | 실제 차량용 앱은 P단과 주행 중 조작 제한을 확인해 준비물 사진과 버튼을 잠급니다. |
 
-기능 비교표는 공식 기능 페이지·설명서·개발사 앱스토어 설명을 우선합니다. 제공 중인 기능과 발표·계획, 국가·차종·버전 차이를 구분합니다.
+## 실행 화면
 
-## 공모전과 작업 안내
+폰과 차량 모두 밝은 중성 배경, 얇은 구분선, 채움 없는 블루 글자 버튼을 사용합니다. 차량에서는 왼쪽 방문지를 선택하고 오른쪽 준비물을 확인합니다.
 
-- [참가 조건·심사 기준·제출 일정](docs/01-contest.md)
-- [Pleos 샘플 빌드·실행 기록](docs/05-first-run.md) — 샘플 실행과 운전석 앞문 상태 조회까지 확인
-- [다른 기기에서 이어서 작업하기](docs/07-handoff.md)
-- [상세 작업 일정·진행 기록](docs/13-work-log.md)
+| 휴대폰 | 차량 시연 앱 |
+|---|---|
+| <img src="docs/screenshots/c-0.10.0/phone.png" width="210" alt="휴대폰 방문지 준비 화면"> | <img src="docs/screenshots/c-0.10.0/vehicle.png" width="650" alt="차량 방문지와 준비물 화면"> |
+
+[약 1분 27초 실제 앱 시연](docs/media/changyeoga-demo-0.10.0.mp4) · [디자인 기준](docs/design/DESIGN-SYSTEM.md)
+
+## 설치와 실행
+
+| APK | 실행 환경 |
+|---|---|
+| [휴대폰](apk/changyeoga-phone-debug.apk) | Android 휴대폰에서 방문지와 준비물을 등록합니다. |
+| [차량](apk/changyeoga-vehicle-debug.apk) | Pleos/Android Automotive의 차량 신호를 읽습니다. P단과 UX 제한이 허용될 때 조작합니다. |
+| [차량 화면 시연용](apk/changyeoga-demo-debug.apk) | 일반 Android에서도 차량 UI를 실행합니다. 모의 P단 스위치로 잠금을 확인합니다. |
+
+기존 앱 위에 업데이트 설치하면 목록과 사진을 유지합니다. 현재 공개된 APK는 debug 개발 빌드입니다. [설치 안내·SHA-256](apk/README.md) · [소스 빌드와 설정](android/README.md)
+
+## 개발과 시험 환경
+
+| 구분 | 환경 |
+|---|---|
+| 빌드 | Kotlin 2.0.0, JDK 17, Gradle 8.10.2, AGP 8.8.2, compile/target SDK 35 |
+| Pleos 초기 SDK·차량 신호 시험 | Pleos Connect 2.1, Android 14/API 34, x86_64 |
+| 최신 휴대폰 UI·회귀 시험 | Android 15/API 35, 1080×2400, density 420 |
+| 최신 차량 UI 시연 | Android 15/API 35에서 demo 앱 실행, 1920×1080, density 240 |
+| 연결 | Pleos NaviHelper 3.0.5, Android Automotive P단·UX 제한, 네이버 지도 SDK 3.24.0 |
+
+최신 빌드와 단위 테스트, 휴대폰 UI 3개·차량 시연 UI 2개 회귀 검사를 통과했습니다. 영상의 차량 상태는 demo 앱의 모의 입력이며, 목록은 ZIP으로 전달했습니다. [최신 적용 기록](docs/28-c-design-applied.md) · [Pleos 초기 실행 기록](docs/05-first-run.md)
+
+## 다음 개발
+
+매일 필요한 준비물과 미리 등록한 물건을 모아 출발할 때 알려주고, 도착 후 전달할 물건도 자동으로 안내하도록 발전시킵니다. 반복 준비물, 백그라운드 알림, 캘린더 일정 불러오기, 공유받은 텍스트·이미지의 일정 및 준비물 등록을 이어서 개발합니다.
 
 <details>
-<summary>이전 조사와 후보 기록 보기</summary>
+<summary>조사 자료와 이전 개발 기록</summary>
 
-아래 자료는 당시 조사 기록입니다. 현재 선정한 주제나 우선순위를 뜻하지 않습니다.
+아래 문서는 작성 당시의 조사·개발 이력입니다. 현재 설치·기능 설명은 이 README와 Android·APK·서버 안내를 기준으로 합니다.
 
-- [현대차그룹 기업 조사](docs/02-companies.md)
-- [초기 비교 기업·출품 후보](docs/03-benchmarks.md)
-- [아이디어 후보 기록](docs/04-idea-selection.md)
-- [이용 경험·수상 사례](docs/06-experiences-and-awards.md)
-- [불편 사례 검증 기록](docs/09-problem-evidence.md)
+- [현대차·Tesla·중국 업체 공식 기능 비교](docs/11-official-app-feature-map.md)
+- [Pleos 앱마켓 조사](docs/12-pleos-app-market.md)
+- [SDK·API 조사](docs/08-pleos-apis.md)
+- [개발 기록](docs/16-development-log.md)
+- [검색 서버](server/README.md)
+- [공모전 공식 안내](https://appdevchallenge.auto-hmg.io/guide/submission)
 
+서명과 연락처가 포함된 최종 제출 문서는 이 저장소에 포함하지 않습니다.
 </details>
-
-[공식 공모전 가이드](https://appdevchallenge.auto-hmg.io/guide) · [설명회 원본 자료](sources/현대차앱공모전사진.zip)

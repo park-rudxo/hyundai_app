@@ -1,106 +1,111 @@
-# 챙겨가 Android 첫 실행 버전
+# 챙겨가 Android 앱
 
-사진으로 등록한 짐을 방문지별로 나누고 적재와 전달을 별도로 확인하는 Kotlin·Jetpack Compose 앱입니다. 현재 버전은 **같은 네트워크에서 목록을 전달할 수 있는 0.6.0 개발용 앱**입니다.
+현재 버전은 **0.10.0 (versionCode 17)**입니다. Kotlin·Jetpack Compose로 휴대폰·Pleos 차량·차량 화면 시연 앱을 하나의 프로젝트에서 빌드합니다.
 
-## 0.6.0 지도 연결
+## 실행할 앱 고르기
 
-휴대폰은 방문지 이름 입력 없이 네이버 지도를 먼저 열고, 위치 선택 후 별명을 선택해서 붙입니다. 위도·경도 직접 입력은 제거했습니다. 차량은 NaviHelper로 기본 내비 지도와 경로 요청을 보냅니다. 11월 11일 배포 휴대폰 APK에는 네이버 Client ID를 적용했습니다. 로컬에서 키 없이 빌드하면 지도 설정 대기 안내가 표시됩니다. [키 발급·설정·실행 검증](../docs/17-map-setup.md)을 먼저 확인하세요. 주소 검색은 Android Geocoder이며 네이버 업체명 검색과 다릅니다.
-
-## 0.4.0 휴대폰 화면 변경
-
-앱을 열면 방문지 정하기 → 짐 사진 등록 → 차에 싣기 → 차량에 보내기 → 도착 후 전달 순서로 진행합니다. 이전/다음 버튼으로 이동하고 현재 단계는 재실행 후 복원합니다. 각 방문지에 사진이 있어야 적재 단계로, 모든 짐의 적재를 확인해야 전송 단계로 넘어갑니다. 차량 전송은 선택 사항입니다. 파일 가져오기·내보내기, 새 외출, 위치·음성 도구는 상단 더보기로 옮겼습니다. 차량용 화면은 기존 구성을 유지합니다.
-
-위치 찾기는 GPS와 네트워크 위치 제공자를 함께 요청합니다. 좌표와 오차를 표시하고 30초 동안 수신이 없으면 설정 확인 방법을 안내합니다. 정확한 위치 권한이 필요하며 자동 도착과 현재 위치 저장은 기존 50m 정확도·15초 이내 조건을 유지합니다. 대략적인 위치 수신과 정밀 위치 확보를 구분합니다. 실제 사용자 휴대폰에서의 수신 개선은 재시험이 필요합니다.
-
-## 실행 버전
-
-| 빌드 | 앱 이름 | 용도 |
+| flavor | 패키지 | 역할 |
 |---|---|---|
-| phoneDebug | 챙겨가 준비 | 휴대폰에서 방문지 추가, 카메라 촬영 또는 사진 선택, 상태 확인 |
-| vehicleDebug | 챙겨가 | AAOS의 실제 P단과 CarUxRestrictions를 읽고 둘 다 허용할 때만 조작 가능 |
-| demoDebug | 챙겨가 시연 | 모의 P단 스위치가 있는 개발 시연 전용. 실제 차량 신호를 읽지 않음 |
+| phone | io.changyeoga.app.phone | 네이버 지도·장소명 검색, 별명, 사진 준비물, 적재·전달 확인, 가스레인지 확인, 공유 메모와 캘린더 작성 |
+| vehicle | io.changyeoga.app | 실제 P단·UX 제한을 확인하는 Pleos/AAOS 차량 앱. NaviHelper로 기본 내비와 방문지 경로 요청 |
+| demo | io.changyeoga.app.demo | 일반 Android에서 차량 UI를 보여주는 시연 앱. 실제 차량 신호 대신 모의 P단 사용 |
 
-시연용은 차량용과 패키지가 다릅니다. 실제 차량용에는 모의 잠금 해제 스위치가 없습니다. 세 APK는 디버그 서명이며 공모전 제출용 release가 아닙니다.
+[APK 다운로드](../apk/README.md) · [실제 앱 영상](../docs/media/changyeoga-demo-0.10.0.mp4)
 
-## 현재 가능한 흐름
+## 사용자 흐름
 
-1. `첫 방문지 추가`에서 외가·친가 등 방문지 이름을 입력합니다. 내비 목적지 연결은 아직 없습니다.
-2. 방문지를 선택하고 사진을 추가합니다. 휴대폰용은 외부 카메라 앱의 촬영 미리보기 또는 사진 선택을 사용합니다. 원본 대신 앱 내부에 JPEG 사본을 저장하므로 선택한 사진 파일을 나중에 이동해도 목록이 유지됩니다. 촬영은 현재 저해상도 미리보기이며 고해상도 촬영은 후속 작업입니다.
-3. 짐을 실제로 실은 뒤 `실었어요`를 누릅니다.
-4. `도착·전달`에서 방문지를 직접 선택하고 `건넸어요`를 누릅니다. 적재 확인 전에는 전달 완료로 바꿀 수 없습니다. 도착지를 선택하는 것만으로 완료 처리하지 않습니다.
-5. `되돌리기`로 직전 상태로 돌아갑니다. 강제 종료·재실행 시 사진, 방문지, 상태를 복원합니다.
+1. 휴대폰에서 네이버 지도로 방문지를 찾습니다. 장소명을 입력하면 결과가 나오며, 선택 후 위치와 별명을 저장합니다.
+2. 방문지마다 가져갈 물건 사진을 등록합니다. 사진은 작은 썸네일로 표시하고 누르면 확대합니다.
+3. 차에 넣은 물건에 ‘실었어요’를 누릅니다. 출발 전 집안 확인에서 가스레인지 확인 시각도 남길 수 있습니다.
+4. 차량 연결 단계에서 목록을 전송합니다. 차량에서는 왼쪽 방문지와 오른쪽 준비물 목록을 확인합니다.
+5. 주차 후 물건을 건네고 ‘건넸어요’를 누릅니다. ‘적재 취소’와 ‘전달 취소’로 상태를 되돌릴 수 있습니다.
 
-사진이 없어도 `예시로 둘러보기`로 두 방문지와 짐의 흐름을 확인할 수 있습니다. 예시 항목은 실제 촬영 사진이 없다는 표시를 유지합니다. `새 외출`은 확인 대화상자 후 현재 목록을 초기화합니다.
+방문지마다 준비물이 있어야 적재 단계로 진행하고, 모든 준비물의 적재를 확인해야 전송 단계로 진행합니다. 목록과 사진은 기기에 저장합니다. ‘새 외출’은 확인 대화상자 후 현재 목록과 사진을 초기화합니다.
 
-## 휴대폰에서 차량으로 보내기
+상단 ‘파일·새 외출’ 또는 차량 ‘더보기’에서 ZIP 가져오기·내보내기와 새 외출을 선택합니다. 다른 앱의 텍스트 공유는 ‘공유받은 글 확인’ 화면으로 연결합니다. 공유 메모는 최근 1개를 보관하며, 캘린더 일정은 Google 캘린더의 작성 화면에서 사용자가 저장합니다.
 
-1. 휴대폰과 차량을 같은 Wi-Fi 또는 핫스팟에 연결합니다. 차량은 P단이어야 합니다.
-2. 휴대폰 앱에서 `차량으로 보내기 → 보내기 시작`을 누르고 화면을 열어 둡니다.
-3. 차량 앱에서 `휴대폰에서 받기`를 열고 휴대폰의 `주소:포트`를 입력합니다.
-4. `휴대폰 확인` 후 두 화면의 확인 문구가 모두 같은지 비교하고, 휴대폰의 6자리 코드를 입력합니다.
-5. `문구가 같아요 · 받아서 교체`를 누르면 방문지·사진·체크 상태를 교체합니다. 기존 차량 목록과 병합하지 않습니다.
+## 연결과 저장
 
-시작 시점의 목록을 한 번 전송합니다. 수정 후에는 다시 보내야 합니다. 세션은 5분, 성공 1회 또는 잘못된 코드 5회까지이며 휴대폰 앱을 나가면 종료됩니다. 사진과 목록은 합계 20MB 이하입니다. TLS 1.2와 인증서 확인을 사용하고, 외부 서버에 업로드하지 않습니다.
+### 같은 Wi-Fi로 보내기
 
-같은 Wi-Fi여도 공유기의 기기 간 통신 차단, 차량의 네트워크 정책 때문에 연결되지 않을 수 있습니다. 이 경우 기존 `목록 내보내기/가져오기`로 ZIP을 이동할 수 있습니다. **현재 검증은 Pleos AVD 내부 루프백 전송이며 실제 휴대폰↔차량 Wi-Fi 왕복은 아직 확인하지 않았습니다.**
+1. 폰과 차량을 같은 Wi-Fi 또는 핫스팟에 연결합니다. 차량은 P단이어야 합니다.
+2. 폰에서 ‘차량으로 보내기 → 보내기 시작’을 누르고 화면을 열어 둡니다.
+3. 차량에서 ‘휴대폰에서 받기’를 열고 폰의 주소와 포트를 입력합니다.
+4. ‘휴대폰 확인’ 후 두 화면의 확인 문구를 비교하고 연결 코드 6자리를 입력합니다.
+5. ‘문구가 같아요 · 받아서 교체’를 누릅니다.
 
-## 휴대폰 GPS와 음성 명령 (0.3.0)
+전송 시점의 방문지·사진·상태를 한 번 보내며 차량의 기존 목록을 교체합니다. 수정 후에는 다시 전송합니다. TLS 연결을 사용하며 사진과 목록은 합계 20MB까지입니다. 세션은 5분, 성공 1회 또는 잘못된 코드 5회까지 유효합니다. 폰이 보내기 화면을 나가면 연결을 종료합니다.
 
-- 휴대폰 앱에서 방문지를 고른 뒤 `휴대폰 GPS 켜기`로 정확한 위치 권한을 허용합니다. `방문지 위치`에 목적지 위도·경도를 입력하거나 **그 목적지에 실제로 있을 때** `현재 GPS 사용 → 위치 저장`을 누릅니다. 주소 검색·지도 선택은 아직 없습니다.
-- 이 화면이 켜져 있을 때만 GPS를 구독합니다. 다른 앱으로 이동하거나 화면이 꺼지면 중단되고 돌아오면 다시 시작합니다. 배경 감지·알림 서비스는 아직 없으므로 운전 중 화면 조작 대신 동승자가 시험합니다.
-- 정확도 50m 이내, 15초 이내의 위치를 사용합니다. 거리+오차가 150m 이내인 상태가 20초 이어지면 방문지 근처 안내와 해당 짐 화면을 표시합니다. 이는 도착 후보이며 정차나 실제 전달을 증명하지 않습니다. 인접 목적지가 모호하면 자동 선택하지 않습니다. 세션 내 재안내는 500m 밖으로 나간 뒤 재접근할 때 가능합니다.
-- 위치는 **휴대폰에서 감지·안내**합니다. 차량에 실시간 위치를 중계하지 않습니다. 저장한 목적지 좌표는 기존 일회 목록 전송에 포함됩니다. 이동 경로는 저장하지 않습니다.
-- `음성 명령`은 설치된 Android 음성 인식 앱을 호출합니다. `짐 알려줘`, `짐 읽어줘`, `외가 도착`(등록한 방문지 이름), `출발 준비`를 지원하며 인식된 문장을 확인한 후 실행합니다. 적재·전달 완료는 자동 처리하지 않습니다. 같은 이름이 여러 개면 음성 선택을 거부합니다.
-- 음성 인식 앱/한국어 TTS가 없으면 버튼·글 안내를 사용합니다. 음성 인식 제공자에 따라 인터넷 및 제공자의 음성 처리가 필요할 수 있습니다. 상시 듣기나 Pleos 기본 음성 비서 연동은 아닙니다. 차량 버전은 기존 P단·UX 제한이 허용할 때만 명령 UI를 제공합니다.
+### ZIP으로 옮기기
 
-## 개발 환경과 빌드
+폰의 ‘파일·새 외출 → 목록 내보내기’에서 ZIP을 저장합니다. 파일을 차량으로 옮긴 뒤 차량 ‘더보기 → 목록 가져오기’에서 선택합니다. 시연 영상은 이 방식으로 같은 목록을 전달했습니다.
 
-JDK 17, Android SDK Platform 35, Android Gradle Plugin 8.8.2, Kotlin 2.0.0, Gradle wrapper 8.10.2를 사용합니다. Android 8(API 26) 이상을 대상으로 합니다. 차량용은 AAOS 및 `android.car` 라이브러리가 있는 환경이 필요합니다.
+## 빌드 환경과 지도 설정
 
-Windows PowerShell에서:
+JDK 17, Android SDK Platform 35, Gradle wrapper 8.10.2를 사용합니다. minSdk 26, compile/targetSdk 35, Kotlin 2.0.0, AGP 8.8.2입니다. 차량용 실행에는 Android Automotive의 android.car 서비스가 필요합니다.
 
-```powershell
-cd android
-# JAVA_HOME, ANDROID_HOME이 설정돼 있으면 그 값을 사용합니다.
-.\build.ps1
-# 연결된 Pleos 에뮬레이터에서 UI 검증
-.\build.ps1 -Tasks ':app:connectedDemoDebugAndroidTest'
+`android/local.properties`에 개발 PC의 SDK 경로와 지도 설정을 입력합니다. 이 파일은 Git에서 제외됩니다.
+
+```properties
+sdk.dir=C:/Users/YOUR_USER/AppData/Local/Android/Sdk
+NAVER_MAP_CLIENT_ID=YOUR_MAPS_CLIENT_ID
+PLACE_SEARCH_URL=https://hyundai-app-xc7k.onrender.com
 ```
 
-Windows의 한글 프로젝트 경로에서 Gradle 테스트 JVM이 클래스를 찾지 못하는 문제를 피하려고 스크립트는 생성물을 `%LOCALAPPDATA%/Changyeoga/build/app`에 둡니다. 소스는 현재 저장소에 그대로 있습니다. Windows 사용자 폴더도 한글인 경우 `gradlew.bat`에 `-PbuildRoot=C:/영문경로` 형태의 실제 영문 경로를 직접 지정합니다.
+Maps Client ID는 네이버 지도용이며 Android 패키지 `io.changyeoga.app.phone`을 등록합니다. 장소명 검색용 API HUB 인증정보는 [검색 서버](../server/README.md)에서 관리합니다. Client Secret을 앱 설정에 넣지 않습니다. 다른 서버로 빌드하려면 `PLACE_SEARCH_URL`을 바꾸고 `/places` 없이 기본 주소만 입력합니다. 같은 이름의 환경변수로도 설정할 수 있습니다.
 
-영문 경로의 다른 환경에서는:
+### Windows PowerShell
+
+```powershell
+$env:JAVA_HOME='C:/Program Files/Android/Android Studio/jbr'
+$env:ANDROID_HOME="$env:LOCALAPPDATA/Android/Sdk"
+cd android
+.\build.ps1
+```
+
+빌드 결과는 `%LOCALAPPDATA%/Changyeoga/build/app/outputs/apk/<flavor>/debug/`에 생성합니다. 한글 경로에서 테스트 JVM의 클래스 경로 문제를 피하도록 출력 경로를 따로 사용합니다. 다른 출력 경로는 다음처럼 지정합니다.
+
+```powershell
+.\gradlew.bat assemblePhoneDebug assembleVehicleDebug assembleDemoDebug testPhoneDebugUnitTest '-PbuildRoot=C:/Temp/changyeoga-build'
+```
+
+### 다른 환경
 
 ```sh
-sh gradlew :app:assemblePhoneDebug :app:assembleVehicleDebug :app:assembleDemoDebug :app:testDemoDebugUnitTest
+cd android
+sh gradlew assemblePhoneDebug assembleVehicleDebug assembleDemoDebug testPhoneDebugUnitTest
 ```
 
-APK는 `<buildRoot>/app/outputs/apk/<flavor>/debug/`에 생성됩니다. buildRoot를 지정하지 않으면 `app/build/outputs/apk/`입니다.
+출력 경로를 지정하지 않으면 `android/app/build/outputs/apk/<flavor>/debug/`에 생성됩니다. 현재 제공 파일은 debug 서명 빌드이며, release 서명 설정은 별도로 준비합니다.
 
-이 PC에서는 Pleos AVD의 화면 갱신 지연을 관찰했습니다. `-gpu swiftshader_indirect -no-snapshot-load -no-snapshot-save` 옵션으로 재시작한 뒤 정상 표시와 조작을 확인했습니다. 부팅 직후 기본 내비가 전면으로 열릴 수 있으므로 초기 로딩 후 앱을 다시 선택합니다. 자세한 관찰은 개발 기록에 남겼습니다.
+### 설치
 
-```powershell
-adb install -r <APK경로>
-adb shell am start -n io.changyeoga.app/.MainActivity
-# 시연용: io.changyeoga.app.demo/.MainActivity
-# 휴대폰용: io.changyeoga.app.phone/.MainActivity
+```sh
+adb install -r apk/changyeoga-phone-debug.apk
+adb shell am start -n io.changyeoga.app.phone/io.changyeoga.app.MainActivity
+# 차량용 패키지: io.changyeoga.app
+# 시연용 패키지: io.changyeoga.app.demo
 ```
 
-## 아직 연결하지 않은 기능
+위 설치 명령은 저장소 루트에서 실행합니다. 기존 목록을 유지하려면 삭제 없이 업데이트 설치합니다.
 
-- 지속적인 자동 동기화와 차량→휴대폰 역방향 무선 반영: 현재는 휴대폰→차량 일회 전송 또는 ZIP 이동입니다.
-- NaviHelper 목적지·경유지 및 자동 도착 이벤트: 현재 직접 선택합니다.
-- 예상 출발 N분 전 예약 알림과 외출 전 점검 사진의 별도 분류.
-- 실제 휴대폰 카메라와 양산차 검증, release 서명, 앱마켓 심사.
-- 차량용 화면 크기·카메라 품질 등 실제 사용 환경의 추가 조정.
+## SDK와 시험 환경
 
-## 원본과 출처
+- 차량: CarPropertyManager의 GEAR_SELECTION과 CarUxRestrictionsManager를 확인합니다. 연결이 끊기거나 주차·UX 제한을 확인할 수 없으면 조작을 잠급니다.
+- 내비: Pleos NaviHelper 3.0.5로 기본 내비 화면과 방문지 경로를 요청합니다.
+- 지도: 네이버 지도 SDK 3.24.0과 Play Services Location을 사용합니다. 장소명 검색은 API HUB 중계 서버를 호출합니다.
+- 음성 보조 도구: 현재 Android 음성 인식 앱과 TTS를 호출합니다. Pleos SpeechToText 연동은 다음 개발 항목입니다.
 
-- [Pleos 주행 제한 개발 가이드](https://document.pleos.ai/en/docs/pleos-only/vehicle-app-developer-guide/driving-restriction-development-guide): CarUxRestrictionsManager 연결 근거.
-- [AAOS VehiclePropertyIds](https://developer.android.com/reference/android/car/VehiclePropertyIds): GEAR_SELECTION을 통한 P단 확인. 신호를 읽을 수 없으면 잠급니다.
-- [공식 Vehicle 샘플](https://github.com/Pleos-Playground/pleos-sample-vehicle-app/tree/959981d): 검증된 Gradle wrapper와 의존성 버전을 참고했습니다. 앱 구현은 새로 작성했습니다. Gradle wrapper 파일의 Apache 2.0 고지를 유지했습니다.
-- [기획서 초안](../docs/15-proposal-draft.md), [검증 기록](../docs/16-development-log.md).
+| 시험 구분 | 환경 |
+|---|---|
+| 초기 Pleos SDK·차량 신호 | Pleos Connect 2.1, Android 14/API 34, x86_64, RAM 4GB |
+| 최신 폰 UI·자동 시험 | Android 15/API 35, 1080×2400, density 420 |
+| 최신 차량 시연 UI | Android 15/API 35, 1920×1080, density 240, demo 앱의 모의 상태 |
 
-- [Android 위치 권한](https://developer.android.com/develop/sensors-and-location/location/permissions)
-- [LocationManager](https://developer.android.com/reference/android/location/LocationManager)
-- [RecognizerIntent](https://developer.android.com/reference/android/speech/RecognizerIntent)
+0.10.0에서 세 flavor 빌드와 휴대폰 단위 테스트, 휴대폰 UI 3개·차량 시연 UI 2개 검사를 통과했습니다. [적용·실행 기록](../docs/28-c-design-applied.md)과 [초기 Pleos 기록](../docs/05-first-run.md)을 참고하세요.
+
+## 다음 개발
+
+반복 준비물, 출발·도착 시점의 자동 안내와 백그라운드 알림, 캘린더 일정 불러오기, 공유받은 텍스트·이미지의 일정 및 준비물 등록을 개발합니다. 현재 차량 방문지는 직접 선택하며, 캘린더 연결은 일정 작성 화면 호출입니다. 지속 동기화와 준비물 자동 분석은 제공하지 않습니다.
+
+[디자인 기준](../docs/design/DESIGN-SYSTEM.md) · [공식 Pleos 개발 문서](https://document.pleos.ai/) · [프로젝트 개요](../README.md)
